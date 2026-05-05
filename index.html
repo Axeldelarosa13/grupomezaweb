@@ -74,7 +74,7 @@
     .brand-text p { margin: 0; font-size: var(--text-xs); color: var(--color-text-muted); }
     
     .logo-container { width: 50px; height: 50px; border-radius: var(--radius-md); overflow: hidden; background: var(--color-surface-2); border: 1px solid var(--color-border); display: grid; place-items: center; }
-    .logo-container img { width: 100%; height: 100%; object-fit: cover; }
+    .logo-container img { width: 100%; height: 100%; object-fit: cover; filter: grayscale(0%); }
     
     .user-menu { display: flex; align-items: center; gap: 1rem; padding-left: 1rem; border-left: 1px solid var(--color-border); margin-left: 0.5rem; }
     .user-email { font-size: var(--text-sm); font-weight: 700; display: flex; align-items: center; gap: 0.5rem; }
@@ -201,13 +201,13 @@
     .toast.warning { border-left-color: var(--color-warning); }
     .toast.hiding { animation: slideOut 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
 
-    /* ESTILOS PARA IMPRESIÓN (Formato Ticket Térmico 80mm) */
+    /* ESTILOS PARA IMPRESIÓN (Formato Ticket Térmico) */
     @media print {
       body * { visibility: hidden; }
       #areaDeImpresion, #areaDeImpresion * { visibility: visible; }
       #areaDeImpresion { 
         position: absolute; left: 0; top: 0; 
-        width: 80mm; /* Ancho de impresora térmica */
+        width: 80mm; 
         padding: 5mm; border: none; background: #fff; 
         font-family: 'Courier New', Courier, monospace;
       }
@@ -416,12 +416,14 @@
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
 import { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword, signOut, onAuthStateChanged, signInWithCustomToken } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
-import { getFirestore, collection, doc, setDoc, updateDoc, deleteDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+// SE IMPORTA REALTIME DATABASE EN VEZ DE FIRESTORE
+import { getDatabase, ref, set, update, remove, onValue, push } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-database.js";
 
 // Tu configuración de Firebase
 const miConfiguracionPropia = {
   apiKey: "AIzaSyATm6oBkwIEsoZEyVIiDbcVOJZCsCYUtv8",
   authDomain: "meza-c4f22.firebaseapp.com",
+  databaseURL: "https://meza-c4f22-default-rtdb.firebaseio.com",
   projectId: "meza-c4f22",
   storageBucket: "meza-c4f22.firebasestorage.app",
   messagingSenderId: "824125098738",
@@ -437,7 +439,7 @@ try {
   let firebaseConfig = Object.keys(miConfiguracionPropia).length > 0 ? miConfiguracionPropia : (typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : {});
   app = initializeApp(firebaseConfig);
   auth = getAuth(app);
-  db = getFirestore(app);
+  db = getDatabase(app); // USANDO REALTIME DATABASE
 } catch(e) {
   console.error("Falta configuración de la base de datos.");
 }
@@ -503,15 +505,15 @@ let activoId = null;
 let isEditing = false;
 let currentFilter = 'all';
 
-function saldoActual(cliente) { return Math.max(0, cliente.movimientos.reduce((a, m) => a + m.monto, 0)); }
-function totalTransacciones(cliente) { return cliente.movimientos.filter(m => m.monto > 0).reduce((a, m) => a + m.monto, 0); }
-function totalAbonos(cliente) { return Math.abs(cliente.movimientos.filter(m => m.monto < 0).reduce((a, m) => a + m.monto, 0)); }
+function saldoActual(cliente) { return Math.max(0, (cliente.movimientos || []).reduce((a, m) => a + m.monto, 0)); }
+function totalTransacciones(cliente) { return (cliente.movimientos || []).filter(m => m.monto > 0).reduce((a, m) => a + m.monto, 0); }
+function totalAbonos(cliente) { return Math.abs((cliente.movimientos || []).filter(m => m.monto < 0).reduce((a, m) => a + m.monto, 0)); }
 
 function getEstatusCliente(c) {
   const saldo = saldoActual(c);
   if (saldo <= 0) return { type: 'paid', label: 'Liquidado', class: 'badge-paid', progress: 'success' };
   
-  const abonos = c.movimientos.filter(m => m.monto < 0);
+  const abonos = (c.movimientos || []).filter(m => m.monto < 0);
   if (abonos.length > 0) {
     abonos.sort((a, b) => new Date(b.fecha) - new Date(a.fecha));
     const lastDate = new Date(abonos[0].fecha + "T00:00:00");
@@ -521,23 +523,32 @@ function getEstatusCliente(c) {
   return { type: 'active', label: 'Activo', class: 'badge-active', progress: 'warning' };
 }
 
-// --- Suscripción a BD ---
+// --- Suscripción a REALTIME DATABASE ---
 function listenClientes(uid) {
-  const colRef = collection(db, 'artifacts', appId, 'users', uid, 'clientes');
-  unsubscribeSnap = onSnapshot(colRef, (snapshot) => {
+  const dbRef = ref(db, `artifacts/${appId}/users/${uid}/clientes`);
+  
+  if (unsubscribeSnap) unsubscribeSnap(); // Limpiar listener anterior si existe
+  
+  unsubscribeSnap = onValue(dbRef, (snapshot) => {
     clientes = [];
-    snapshot.forEach(docSnap => clientes.push({ id: docSnap.id, ...docSnap.data() }));
+    if (snapshot.exists()) {
+      snapshot.forEach(childSnap => {
+        let val = childSnap.val();
+        if(!val.movimientos) val.movimientos = []; // Asegurar array
+        clientes.push({ id: childSnap.key, ...val });
+      });
+    }
     clientes.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
     
     if (activoId && !clientes.find(c => c.id === activoId)) activoId = null;
     
-    document.getElementById('cloudStatus').innerHTML = `☁️ Sincronizado`;
+    document.getElementById('cloudStatus').innerHTML = `☁️ Base de datos en vivo conectada`;
     document.getElementById('userEmailDisplay').textContent = auth.currentUser.email;
     
     renderGlobalStats();
     renderLista(); 
     renderWorkspace();
-  }, (error) => { showToast("Error al sincronizar datos.", "error"); });
+  }, (error) => { showToast("Revisa las 'Reglas' de Realtime Database en Firebase.", "error"); });
 }
 
 // --- Renderizadores ---
@@ -619,7 +630,7 @@ function renderWorkspace() {
   if (!activoId) {
     let allMovimientos = [];
     clientes.forEach(c => {
-      c.movimientos.filter(m => m.monto < 0).forEach(m => {
+      (c.movimientos || []).filter(m => m.monto < 0).forEach(m => {
         allMovimientos.push({ ...m, clientName: c.nombre, clientId: c.id });
       });
     });
@@ -666,11 +677,12 @@ function renderWorkspace() {
   const totalCosto = totalTransacciones(c);
   const porcentaje = totalCosto > 0 ? Math.min(100, Math.round((totalPagado / totalCosto) * 100)) : 0;
   
-  const movsHTML = c.movimientos.length === 0 ? '<p class="muted">No hay movimientos.</p>' : 
+  const movs = c.movimientos || [];
+  const movsHTML = movs.length === 0 ? '<p class="muted">No hay movimientos.</p>' : 
     `<table><thead><tr><th>Fecha</th><th>Concepto</th><th>Monto</th></tr></thead><tbody>` + 
-    c.movimientos.map(m => `<tr><td>${formatDisplayDate(m.fecha)}</td><td>${m.concepto}</td><td class="${m.monto < 0 ? 'text-success' : 'text-warning'}">${fmt.format(m.monto)}</td></tr>`).join('') + `</tbody></table>`;
+    movs.map(m => `<tr><td>${formatDisplayDate(m.fecha)}</td><td>${m.concepto}</td><td class="${m.monto < 0 ? 'text-success' : 'text-warning'}">${fmt.format(m.monto)}</td></tr>`).join('') + `</tbody></table>`;
     
-  const ticketTexto = `*GRUPO MEZA*\n---------------------------------\nCliente : ${c.nombre}\nBalance actual : ${fmt.format(saldo)}\n\n*** Ticket ***\nEnganche Inicial : ${fmt.format(c.enganche)}\nTotal Cargos : ${fmt.format(totalCosto)}\nSaldo Final : ${fmt.format(saldo)}\n\nFecha | Concepto | Monto\n---------------------------------\n` + c.movimientos.map(m => `${formatDisplayDate(m.fecha)} | ${m.concepto} | ${fmt.format(m.monto)}`).join('\n') + `\n---------------------------------\n*** GRACIAS POR SU COMPRA ***`;
+  const ticketTexto = `*GRUPO MEZA*\n---------------------------------\nCliente : ${c.nombre}\nBalance actual : ${fmt.format(saldo)}\n\n*** Ticket ***\nEnganche Inicial : ${fmt.format(c.enganche)}\nTotal Cargos : ${fmt.format(totalCosto)}\nSaldo Final : ${fmt.format(saldo)}\n\nFecha | Concepto | Monto\n---------------------------------\n` + movs.map(m => `${formatDisplayDate(m.fecha)} | ${m.concepto} | ${fmt.format(m.monto)}`).join('\n') + `\n---------------------------------\n*** GRACIAS POR SU COMPRA ***`;
 
   workspace.innerHTML = `
     <div class="detail-header">
@@ -809,7 +821,7 @@ window.abrirModalEdicion = () => {
   document.getElementById('abonoSemanal').value = c.abonoSemanal;
   document.getElementById('notas').value = c.notas || '';
   
-  // Deshabilitar costo y enganche para evitar problemas de contabilidad
+  // Deshabilitar costo y enganche
   document.getElementById('costo').disabled = true;
   document.getElementById('enganche').disabled = true;
   
@@ -819,6 +831,7 @@ window.abrirModalEdicion = () => {
 function limpiarFormulario() { ['folio','nombre','direccion','producto','telefono','costo','enganche','abonoSemanal','notas'].forEach(id => document.getElementById(id).value = ''); }
 document.getElementById('limpiarBtn').onclick = limpiarFormulario;
 
+// GUARDADO EN REALTIME DATABASE
 document.getElementById('guardarBtn').onclick = async () => {
   if (!currentUser) return showToast('Error: Sin sesión activa.', 'error');
   const folio = document.getElementById('folio').value.trim(), nombre = document.getElementById('nombre').value.trim();
@@ -831,11 +844,12 @@ document.getElementById('guardarBtn').onclick = async () => {
   
   try {
     if (isEditing && activoId) {
-      await updateDoc(doc(db, 'artifacts', appId, 'users', currentUser.uid, 'clientes', activoId), {
-        folio, nombre, direccion, producto, telefono, abonoSemanal, notas
-      });
+      // Actualizar
+      const docRef = ref(db, `artifacts/${appId}/users/${currentUser.uid}/clientes/${activoId}`);
+      await update(docRef, { folio, nombre, direccion, producto, telefono, abonoSemanal, notas });
       showToast('Cliente actualizado.', 'success');
     } else {
+      // Crear nuevo
       const costo = Number(document.getElementById('costo').value || 0);
       const enganche = Number(document.getElementById('enganche').value || 0);
       if (costo <= 0) return showToast('El costo debe ser mayor a 0.', 'warning'); 
@@ -843,15 +857,16 @@ document.getElementById('guardarBtn').onclick = async () => {
       const movimientos = [{ fecha: today(), concepto: 'Saldo inicial (Costo)', monto: costo }];
       if (enganche > 0) movimientos.push({ fecha: today(), concepto: 'Enganche inicial', monto: -enganche });
       
-      const newDocRef = doc(collection(db, 'artifacts', appId, 'users', currentUser.uid, 'clientes'));
-      await setDoc(newDocRef, { folio, nombre, direccion, producto, telefono, costo, enganche, abonoSemanal, notas, movimientos, createdAt: new Date().toISOString() });
-      activoId = newDocRef.id; 
+      const clientesRef = ref(db, `artifacts/${appId}/users/${currentUser.uid}/clientes`);
+      const newDocRef = push(clientesRef);
+      await set(newDocRef, { folio, nombre, direccion, producto, telefono, costo, enganche, abonoSemanal, notas, movimientos, createdAt: new Date().toISOString() });
+      activoId = newDocRef.key; 
       showToast('Cliente registrado exitosamente.', 'success');
     }
     
     limpiarFormulario(); 
     modalAlta.classList.remove('active'); 
-  } catch(e) { showToast('Hubo un problema al guardar en la nube.', 'error'); }
+  } catch(e) { showToast('Hubo un problema al guardar en la nube.', 'error'); console.error(e); }
 };
 
 // Modal Eliminar Cliente Segura
@@ -865,7 +880,8 @@ document.getElementById('cancelarEliminarBtn').onclick = () => { modalEliminar.c
 document.getElementById('confirmarEliminarBtn').onclick = async () => {
   if (!activoId || !currentUser) return;
   try { 
-    await deleteDoc(doc(db, 'artifacts', appId, 'users', currentUser.uid, 'clientes', activoId)); 
+    const docRef = ref(db, `artifacts/${appId}/users/${currentUser.uid}/clientes/${activoId}`);
+    await remove(docRef);
     modalEliminar.classList.remove('active');
     showToast('Cliente eliminado permanentemente.', 'success'); 
     activoId = null;
@@ -873,7 +889,7 @@ document.getElementById('confirmarEliminarBtn').onclick = async () => {
   catch(e) { showToast('Error al intentar eliminar.', 'error'); }
 };
 
-// Registro de Abonos
+// Registro de Abonos (RTDB)
 window.registrarAbono = async () => {
   if (!activoId || !currentUser) return;
   const c = clientes.find(c => c.id === activoId);
@@ -887,13 +903,12 @@ window.registrarAbono = async () => {
   if (saldo <= 0) return showToast('La cuenta ya está liquidada.', 'warning');
 
   const aplicado = Math.min(monto, saldo);
-  const updatedMovimientos = [...c.movimientos, { fecha: fechaSeleccionada, concepto, monto: -aplicado }];
-  
-  // Ordenar movimientos por fecha
+  const updatedMovimientos = [...(c.movimientos || []), { fecha: fechaSeleccionada, concepto, monto: -aplicado }];
   updatedMovimientos.sort((a, b) => new Date(a.fecha) - new Date(b.fecha));
   
   try {
-    await setDoc(doc(db, 'artifacts', appId, 'users', currentUser.uid, 'clientes', c.id), { movimientos: updatedMovimientos }, { merge: true });
+    const docRef = ref(db, `artifacts/${appId}/users/${currentUser.uid}/clientes/${c.id}`);
+    await update(docRef, { movimientos: updatedMovimientos });
     showToast(`Pago por ${fmt.format(aplicado)} aplicado exitosamente.`, 'success');
   } catch(e) { showToast('Error al procesar el pago.', 'error'); }
 };
@@ -954,7 +969,7 @@ window.enviarTicketWhatsApp = () => {
 
   const saldo = saldoActual(c);
   const totalCosto = totalTransacciones(c);
-  const ticketTexto = `*TICKET DE COBRO - GRUPO MEZA*\n\nCliente : ${c.nombre}\nBalance actual : *${fmt.format(saldo)}*\n\nEnganche Inicial : ${fmt.format(c.enganche)}\nTotal Cargos : ${fmt.format(totalCosto)}\nSaldo Final : *${fmt.format(saldo)}*\n\nFecha | Concepto | Monto\n---------------------------------\n` + c.movimientos.map(m => `${formatDisplayDate(m.fecha)} | ${m.concepto} | ${fmt.format(m.monto)}`).join('\n') + `\n---------------------------------\n*** GRACIAS POR SU PREFERENCIA ***`;
+  const ticketTexto = `*TICKET DE COBRO - GRUPO MEZA*\n\nCliente : ${c.nombre}\nBalance actual : *${fmt.format(saldo)}*\n\nEnganche Inicial : ${fmt.format(c.enganche)}\nTotal Cargos : ${fmt.format(totalCosto)}\nSaldo Final : *${fmt.format(saldo)}*\n\nFecha | Concepto | Monto\n---------------------------------\n` + (c.movimientos || []).map(m => `${formatDisplayDate(m.fecha)} | ${m.concepto} | ${fmt.format(m.monto)}`).join('\n') + `\n---------------------------------\n*** GRACIAS POR SU PREFERENCIA ***`;
   
   window.open(`https://wa.me/${telefonoLimpio}?text=${encodeURIComponent(ticketTexto)}`, '_blank');
 };
@@ -988,7 +1003,7 @@ if (auth) {
       userMenu.style.display = 'none';
       document.getElementById('cloudStatus').innerHTML = 'Inicia sesión...';
       
-      if (unsubscribeSnap) unsubscribeSnap();
+      if (unsubscribeSnap) { unsubscribeSnap(); unsubscribeSnap = null; }
       clientes = []; activoId = null;
       renderGlobalStats(); renderLista(); renderWorkspace();
     }
