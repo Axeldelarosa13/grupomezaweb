@@ -362,7 +362,7 @@
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>
             <span id="userEmailDisplay">usuario@correo</span>
           </div>
-          <button class="btn btn-ghost" onclick="window.abrirConfiguracion()" title="Configuración de Seguridad" style="padding: 0.5rem;">
+          <button class="btn btn-ghost" id="settingsBtn" onclick="window.abrirConfiguracion()" title="Configuración de Seguridad" style="padding: 0.5rem; display: none;">
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>
           </button>
           <button class="btn btn-ghost" id="logoutBtn" title="Cerrar sesión" style="padding: 0.5rem;">
@@ -1007,6 +1007,8 @@ function renderWorkspace() {
   const c = clientes.find(c => c.id === activoId);
   if(!c) { activoId = null; renderWorkspace(); return; }
 
+  const isAdmin = currentUser && currentUser.email === 'edgarmeza@admin.com';
+
   const saldo = saldoActual(c);
   const estatus = getEstatusCliente(c);
   
@@ -1022,7 +1024,7 @@ function renderWorkspace() {
       <td>${m.concepto}</td>
       <td class="${m.monto < 0 ? 'text-success' : 'text-warning'}">${fmt.format(m.monto)}</td>
       <td class="no-print" style="text-align: right;">
-        ${m.monto < 0 ? `<button class="btn btn-ghost" style="padding: 0.3rem 0.5rem; color: var(--color-error); border: none;" onclick="window.confirmarEliminarAbono('${index}')" title="Borrar este abono"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg></button>` : ''}
+        ${m.monto < 0 && isAdmin ? `<button class="btn btn-ghost" style="padding: 0.3rem 0.5rem; color: var(--color-error); border: none;" onclick="window.confirmarEliminarAbono('${index}')" title="Borrar este abono"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg></button>` : ''}
       </td>
     </tr>`).join('') + `</tbody></table>`;
     
@@ -1110,7 +1112,7 @@ function renderWorkspace() {
           <div>
             <h3 style="margin-top:0; display:flex; justify-content:space-between; align-items:center;">
               Historial de Movimientos
-              <button class="btn btn-danger" onclick="window.confirmarEliminarCliente()" style="padding: 0.4rem 0.8rem; font-size: var(--text-xs);">Borrar Cliente</button>
+              ${isAdmin ? `<button class="btn btn-danger" onclick="window.confirmarEliminarCliente()" style="padding: 0.4rem 0.8rem; font-size: var(--text-xs);">Borrar Cliente</button>` : ''}
             </h3>
             <div style="background:var(--color-surface); border:1px solid var(--color-border); border-radius:var(--radius-lg); overflow:hidden;">
               <div style="overflow-x:auto;">${movsHTML}</div>
@@ -1480,16 +1482,19 @@ if (auth) {
     const overlay = document.getElementById('authOverlay');
     const userMenu = document.getElementById('userMenuPanel');
     const ownerPanelBtn = document.getElementById('ownerPanelBtn');
+    const settingsBtn = document.getElementById('settingsBtn');
     
     if (user) {
       overlay.style.display = 'none';
       userMenu.style.display = 'flex';
       
-      // Mostrar Panel de Dueño solo al administrador
+      // Mostrar Panel de Dueño y Configuración solo al administrador
       if (user.email === 'edgarmeza@admin.com') {
-        ownerPanelBtn.style.display = 'inline-flex';
+        if (ownerPanelBtn) ownerPanelBtn.style.display = 'inline-flex';
+        if (settingsBtn) settingsBtn.style.display = 'inline-flex';
       } else {
-        ownerPanelBtn.style.display = 'none';
+        if (ownerPanelBtn) ownerPanelBtn.style.display = 'none';
+        if (settingsBtn) settingsBtn.style.display = 'none';
       }
       
       // Guardar el email del usuario recién conectado para que el Dueño pueda identificarlo en su panel
