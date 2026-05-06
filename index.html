@@ -571,8 +571,7 @@ const miConfiguracionPropia = {
 
 // --- Configuración interna ---
 let app, auth, db;
-const appId = typeof __app_id !== 'undefined' ? __app_id : 'mi-cobranza-pro';
-const safeAppId = appId.replace(/[.#$\[\]]/g, '_'); // Sanitizar appId para Firebase Realtime DB
+const dbRoot = "sistema_cobranza"; // Ruta limpia para evitar errores de caracteres inválidos en Firebase
 
 try {
   let firebaseConfig = Object.keys(miConfiguracionPropia).length > 0 ? miConfiguracionPropia : (typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : {});
@@ -680,7 +679,7 @@ window.abrirPanelDueno = async () => {
   list.innerHTML = '<div style="grid-column: span 2; text-align: center; padding: 2rem;">Cargando perfiles...</div>';
   
   try {
-    const usersRef = ref(db, `artifacts/${safeAppId}/users`);
+    const usersRef = ref(db, `${dbRoot}/users`);
     const snapshot = await get(usersRef);
     list.innerHTML = '';
     
@@ -753,10 +752,10 @@ window.salirModoObservador = () => {
 // --- Suscripción a REALTIME DATABASE ---
 function listenClientes(uid) {
   if (!uid) return;
-  const dbRef = ref(db, `artifacts/${safeAppId}/users/${uid}/clientes`);
+  const dbRef = ref(db, `${dbRoot}/users/${uid}/clientes`);
   
   // Solo el dueño (el usuario real logueado) puede usar SU propio PIN, por ende escuchamos las settings del currentUser
-  const settingsRef = ref(db, `artifacts/${safeAppId}/users/${currentUser.uid}/settings`);
+  const settingsRef = ref(db, `${dbRoot}/users/${currentUser.uid}/settings`);
   
   if (unsubscribeSnap) unsubscribeSnap(); 
   
@@ -1202,7 +1201,7 @@ document.getElementById('guardarBtn').onclick = async () => {
     const targetUid = getActiveUid();
     if (isEditing && activoId) {
       // Actualizar
-      const docRef = ref(db, `artifacts/${safeAppId}/users/${targetUid}/clientes/${activoId}`);
+      const docRef = ref(db, `${dbRoot}/users/${targetUid}/clientes/${activoId}`);
       await update(docRef, { folio, nombre, direccion, producto, telefono, abonoSemanal, notas });
       showToast('Cliente actualizado.', 'success');
     } else {
@@ -1214,7 +1213,7 @@ document.getElementById('guardarBtn').onclick = async () => {
       const movimientos = [{ fecha: today(), concepto: 'Saldo inicial (Costo)', monto: costo }];
       if (enganche > 0) movimientos.push({ fecha: today(), concepto: 'Enganche inicial', monto: -enganche });
       
-      const clientesRef = ref(db, `artifacts/${safeAppId}/users/${targetUid}/clientes`);
+      const clientesRef = ref(db, `${dbRoot}/users/${targetUid}/clientes`);
       const newDocRef = push(clientesRef);
       await set(newDocRef, { folio, nombre, direccion, producto, telefono, costo, enganche, abonoSemanal, notas, movimientos, createdAt: new Date().toISOString() });
       activoId = newDocRef.key; 
@@ -1228,7 +1227,7 @@ document.getElementById('guardarBtn').onclick = async () => {
     
     limpiarFormulario(); 
     modalAlta.classList.remove('active'); 
-  } catch(e) { showToast('Hubo un problema al guardar en la nube.', 'error'); console.error(e); }
+  } catch(e) { showToast('Hubo un problema al guardar: ' + e.message, 'error'); console.error(e); }
 };
 
 // --- Configuración y PIN ---
@@ -1251,7 +1250,7 @@ window.guardarNuevoPin = async () => {
   }
   
   try {
-    const settingsRef = ref(db, `artifacts/${safeAppId}/users/${currentUser.uid}/settings`);
+    const settingsRef = ref(db, `${dbRoot}/users/${currentUser.uid}/settings`);
     await update(settingsRef, { securityPin: nuevoPin });
     adminPin = nuevoPin;
     document.getElementById('modalConfiguracion').classList.remove('active');
@@ -1301,13 +1300,13 @@ document.getElementById('confirmarEliminarBtn').onclick = async () => {
       let updatedMovimientos = [...(c.movimientos || [])];
       updatedMovimientos.splice(targetAbonoIndex, 1);
       
-      const docRef = ref(db, `artifacts/${safeAppId}/users/${targetUid}/clientes/${activoId}`);
+      const docRef = ref(db, `${dbRoot}/users/${targetUid}/clientes/${activoId}`);
       await update(docRef, { movimientos: updatedMovimientos });
       modalEliminar.classList.remove('active');
       showToast('Abono eliminado y saldo recalculado.', 'success');
     } else {
       // BORRAR CLIENTE COMPLETO
-      const docRef = ref(db, `artifacts/${safeAppId}/users/${targetUid}/clientes/${activoId}`);
+      const docRef = ref(db, `${dbRoot}/users/${targetUid}/clientes/${activoId}`);
       await remove(docRef);
       modalEliminar.classList.remove('active');
       showToast('Cliente eliminado permanentemente.', 'success'); 
@@ -1337,7 +1336,7 @@ window.registrarAbono = async () => {
   
   try {
     const targetUid = getActiveUid();
-    const docRef = ref(db, `artifacts/${safeAppId}/users/${targetUid}/clientes/${c.id}`);
+    const docRef = ref(db, `${dbRoot}/users/${targetUid}/clientes/${c.id}`);
     await update(docRef, { movimientos: updatedMovimientos });
     showToast(`Pago por ${fmt.format(aplicado)} aplicado exitosamente.`, 'success');
   } catch(e) { showToast('Error al procesar el pago.', 'error'); }
@@ -1498,7 +1497,7 @@ if (auth) {
       }
       
       // Guardar el email del usuario recién conectado para que el Dueño pueda identificarlo en su panel
-      set(ref(db, `artifacts/${safeAppId}/users/${user.uid}/profile`), { email: user.email, lastLogin: new Date().toISOString() });
+      set(ref(db, `${dbRoot}/users/${user.uid}/profile`), { email: user.email, lastLogin: new Date().toISOString() });
       
       listenClientes(user.uid);
     } else {
