@@ -32,6 +32,7 @@
       --color-warning: #ea580c; --color-warning-bg: #ffedd5;
       --color-late: #ef4444; --color-late-bg: #fef2f2;
       --color-info: #3b82f6; --color-info-bg: #eff6ff;
+      --color-owner: #8b5cf6; --color-owner-bg: #eff6ff;
       
       --radius-sm: .375rem; --radius-md: .5rem; --radius-lg: .75rem; --radius-xl: 1rem; --radius-2xl: 1.5rem;
       --shadow-sm: 0 1px 2px rgba(0,0,0,.05); 
@@ -57,6 +58,7 @@
       --color-warning: #fb923c; --color-warning-bg: #7c2d12;
       --color-late: #f87171; --color-late-bg: #7f1d1d;
       --color-info: #60a5fa; --color-info-bg: #1e3a8a;
+      --color-owner: #a78bfa; --color-owner-bg: #312e81;
     }
     
     *, *:before, *:after { box-sizing: border-box; } 
@@ -68,6 +70,11 @@
     input:focus, textarea:focus, select:focus { outline: none; border-color: var(--color-primary); box-shadow: 0 0 0 3px var(--color-primary-highlight); } 
     input:disabled { opacity: 0.6; cursor: not-allowed; background: var(--color-bg); }
     
+    /* Observer Banner */
+    .observer-banner { display: none; background: var(--color-owner); color: white; padding: 0.5rem 1rem; text-align: center; justify-content: center; align-items: center; gap: 1rem; font-size: var(--text-sm); font-weight: 700; z-index: 100; box-shadow: var(--shadow-md); position: sticky; top: 0; }
+    .observer-banner button { background: white; color: var(--color-owner); border: none; padding: 0.3rem 0.8rem; border-radius: 999px; font-weight: 900; font-size: var(--text-xs); transition: transform 0.2s; }
+    .observer-banner button:hover { transform: scale(1.05); }
+
     /* Layout Principal */
     .app { max-width: 1400px; margin: 0 auto; padding: var(--space-4); display: flex; flex-direction: column; gap: var(--space-4); min-height: 100vh; } 
     
@@ -150,6 +157,8 @@
     .btn-danger:hover { background: var(--color-error); color: #fff; }
     .btn-whatsapp { background: #25D366; color: #fff; box-shadow: var(--shadow-sm); }
     .btn-whatsapp:hover { background: #1da851; transform: translateY(-1px); box-shadow: var(--shadow-md); }
+    .btn-owner { background: var(--color-owner); color: #fff; box-shadow: var(--shadow-sm); }
+    .btn-owner:hover { background: var(--color-owner-bg); color: #fff; transform: translateY(-1px); box-shadow: var(--shadow-md); }
     
     /* Manejo del Botón "Volver" en Móviles */
     .mobile-back-btn { display: none; align-items: center; justify-content: center; padding: 0.5rem; margin-right: 0.5rem; background: var(--color-surface); border: 1px solid var(--color-border); border-radius: var(--radius-md); cursor: pointer; color: var(--color-text); box-shadow: var(--shadow-sm); }
@@ -210,6 +219,9 @@
     .text-error { color: var(--color-error); font-weight: 700; }
     .empty-state { padding: var(--space-8); text-align: center; color: var(--color-text-muted); display: flex; flex-direction: column; align-items: center; gap: 1rem; }
     
+    .pin-input-container { display: flex; flex-direction: column; align-items: center; margin-top: 1rem; }
+    .pin-input { font-size: 2rem; letter-spacing: 0.5rem; text-align: center; width: 150px; padding: 0.5rem; font-family: monospace; }
+    
     /* Notificaciones Toast */
     .toast-container { position: fixed; bottom: 1.5rem; right: 1.5rem; display: flex; flex-direction: column; gap: 0.5rem; z-index: 9999; }
     .toast { background: var(--color-surface); color: var(--color-text); padding: 1rem 1.5rem; border-radius: var(--radius-md); box-shadow: var(--shadow-lg); border-left: 4px solid var(--color-primary); font-weight: 700; font-size: var(--text-sm); animation: slideIn 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards; opacity: 0; transform: translateX(100%); display: flex; align-items: center; gap: 0.75rem; border: 1px solid var(--color-border); border-left-width: 4px; }
@@ -243,6 +255,7 @@
     /* MEDIA QUERIES RESPONSIVAS PRO (Móvil y Tablets) */
     @media (max-width: 1024px) { 
       .main-workspace { grid-template-columns: 1fr; } 
+      .client-list-panel { height: auto; max-height: 500px; position: static; }
       .user-email span { display: none; }
       .dashboard-grid { grid-template-columns: 1fr; }
     } 
@@ -275,6 +288,12 @@
 </head>
 <body class="view-list">
   <div id="toastContainer" class="toast-container"></div>
+
+  <!-- BANNER DE MODO DUEÑO (Oculto por defecto) -->
+  <div id="observerBanner" class="observer-banner">
+    <span>👀 MODO DUEÑO: Estás observando la cuenta de <span id="observerName" style="text-decoration: underline;"></span></span>
+    <button onclick="window.salirModoObservador()">Cerrar Vista</button>
+  </div>
 
   <!-- PANTALLA DE LOGIN -->
   <div id="authOverlay" class="auth-overlay" style="display: flex;">
@@ -318,11 +337,17 @@
       </div>
       
       <div class="actions">
-        <button class="btn btn-ghost" onclick="window.imprimirCarteraFisica()" title="Imprimir reporte de clientes activos">
+        <!-- BOTÓN PANEL DUEÑO -->
+        <button class="btn btn-owner no-print" id="ownerPanelBtn" onclick="window.abrirPanelDueno()" title="Ver la cartera de todos los empleados" style="display: none;">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg>
+          <span class="no-print">Panel Dueño</span>
+        </button>
+
+        <button class="btn btn-ghost no-print" onclick="window.imprimirCarteraFisica()" title="Imprimir reporte de clientes activos">
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 6 2 18 2 18 9"></polyline><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"></path><rect x="6" y="14" width="12" height="8"></rect></svg>
           <span class="no-print">Imprimir Cartera</span>
         </button>
-        <button class="btn btn-secondary" onclick="window.exportarCSV()" title="Descargar reporte general en Excel">
+        <button class="btn btn-secondary no-print" onclick="window.exportarCSV()" title="Descargar reporte general en Excel">
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
           <span class="no-print">CSV</span>
         </button>
@@ -330,13 +355,16 @@
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
           Nuevo Cliente
         </button>
-        <button class="btn btn-ghost" id="themeBtn" aria-label="Cambiar tema">🌙</button>
+        <button class="btn btn-ghost no-print" id="themeBtn" aria-label="Cambiar tema">🌙</button>
         
-        <div class="user-menu" id="userMenuPanel" style="display: none;">
+        <div class="user-menu no-print" id="userMenuPanel" style="display: none;">
           <div class="user-email" title="Usuario activo">
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>
             <span id="userEmailDisplay">usuario@correo</span>
           </div>
+          <button class="btn btn-ghost" onclick="window.abrirConfiguracion()" title="Configuración de Seguridad" style="padding: 0.5rem;">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>
+          </button>
           <button class="btn btn-ghost" id="logoutBtn" title="Cerrar sesión" style="padding: 0.5rem;">
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path><polyline points="16 17 21 12 16 7"></polyline><line x1="21" y1="12" x2="9" y2="12"></line></svg>
           </button>
@@ -351,7 +379,7 @@
           <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg>
         </div>
         <div class="stat-info">
-          <div class="label">Total Clientes</div>
+          <div class="label">Total Clientes Registrados</div>
           <div class="value" id="statTotalClientes">0</div>
         </div>
       </div>
@@ -403,7 +431,7 @@
           <div class="search-bar">
             <div class="input-wrapper">
               <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
-              <input type="text" id="searchClient" placeholder="Buscar nombre..." />
+              <input type="text" id="searchClient" placeholder="Buscar nombre o folio..." />
             </div>
             <select id="sortClient" title="Ordenar por">
               <option value="recent">Recientes</option>
@@ -427,6 +455,24 @@
 
   <!-- Contenedor oculto para impresiones masivas -->
   <div id="printContainer" class="no-print" style="display: none;"></div>
+
+  <!-- MODAL: PANEL DUEÑO (Ver empleados) -->
+  <div id="modalDueno" class="modal-overlay">
+    <div class="modal-content" style="max-width: 850px;">
+      <div class="modal-header">
+        <h2 style="display:flex; align-items:center; gap:0.5rem; color:var(--color-owner);">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg>
+          Panel de Dueño - Cuentas de Empleados
+        </h2>
+        <button class="close-btn" onclick="document.getElementById('modalDueno').classList.remove('active')">&times;</button>
+      </div>
+      <p class="muted" style="margin-top:0;">Selecciona el perfil de cualquier empleado para entrar a su cuenta en modo observador, ver sus estadísticas detalladas y corregir errores si es necesario.</p>
+      
+      <div id="listaEmpleados" class="grid-form two" style="margin-top: 1.5rem;">
+        <!-- Empleados inyectados por JS -->
+      </div>
+    </div>
+  </div>
 
   <!-- MODAL: ALTA Y EDICIÓN DE CLIENTE -->
   <div id="modalAlta" class="modal-overlay">
@@ -467,11 +513,41 @@
       <div style="width: 60px; height: 60px; background: var(--color-error-bg); color: var(--color-error); border-radius: 50%; display: grid; place-items: center; margin: 0 auto 1.5rem;">
         <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"></path><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path><line x1="10" y1="11" x2="10" y2="17"></line><line x1="14" y1="11" x2="14" y2="17"></line></svg>
       </div>
-      <h2 style="color: var(--color-error); margin-top: 0;">¿Eliminar Cliente?</h2>
-      <p style="color: var(--color-text-muted); font-size: var(--text-sm);">Esta acción no se puede deshacer. Se borrará todo el historial de pagos y el saldo actual desaparecerá de las estadísticas.</p>
+      <h2 style="color: var(--color-error); margin-top: 0;" id="tituloModalEliminar">¿Eliminar Cliente?</h2>
+      <p style="color: var(--color-text-muted); font-size: var(--text-sm);" id="descModalEliminar">Esta acción no se puede deshacer. Se borrará todo el historial de pagos.</p>
+      
+      <div class="pin-input-container">
+        <label style="font-size: var(--text-sm); font-weight: 700; margin-bottom: 0.5rem; color: var(--color-text);">PIN de Administrador Requerido</label>
+        <input type="password" id="pinEliminarInput" class="pin-input" placeholder="****" maxlength="4" autocomplete="new-password">
+      </div>
+
       <div class="actions" style="justify-content: center; margin-top: 2rem;">
         <button class="btn btn-ghost" id="cancelarEliminarBtn" style="width: 45%;">Cancelar</button>
-        <button class="btn btn-danger" id="confirmarEliminarBtn" style="width: 45%;">Sí, eliminar</button>
+        <button class="btn btn-danger" id="confirmarEliminarBtn" style="width: 45%;">Confirmar Acción</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL: CONFIGURACIÓN DE SEGURIDAD -->
+  <div id="modalConfiguracion" class="modal-overlay">
+    <div class="modal-content" style="max-width: 400px;">
+      <div class="modal-header">
+        <h2 style="font-size: var(--text-lg); display: flex; align-items: center; gap: 0.5rem;">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>
+          Seguridad y PIN
+        </h2>
+        <button class="close-btn" onclick="document.getElementById('modalConfiguracion').classList.remove('active')">&times;</button>
+      </div>
+      <p style="font-size: var(--text-sm); color: var(--color-text-muted); margin-top: 0;">El PIN protege contra borrados malintencionados o accidentales de clientes y abonos. <strong>Solo tú (el administrador) debe conocerlo.</strong> (Por defecto: 0000)</p>
+      
+      <div class="grid-form" style="margin-top: 1.5rem;">
+        <label>PIN Actual
+          <input type="password" id="pinActualInput" placeholder="Ingresa el PIN actual" maxlength="4">
+        </label>
+        <label>Nuevo PIN (4 dígitos)
+          <input type="password" id="nuevoPinInput" placeholder="Ej. 1234" maxlength="4">
+        </label>
+        <button class="btn btn-primary" onclick="window.guardarNuevoPin()" style="margin-top: 1rem;">Actualizar PIN Secreto</button>
       </div>
     </div>
   </div>
@@ -479,7 +555,7 @@
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
 import { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword, signOut, onAuthStateChanged, signInWithCustomToken } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
-import { getDatabase, ref, set, update, remove, onValue, push } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-database.js";
+import { getDatabase, ref, set, update, remove, onValue, push, get } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-database.js";
 
 // Tu configuración de Firebase
 const miConfiguracionPropia = {
@@ -509,7 +585,14 @@ try {
 
 let currentUser = null;
 let unsubscribeSnap = null;
-let chartInstance = null; // Variable para la gráfica Chart.js
+let chartInstance = null;
+let adminPin = '0000'; // PIN por defecto
+let targetAbonoIndex = null; // Para saber si borramos un cliente o un abono
+
+// Manejo del MODO OBSERVADOR (Dueño)
+let isObserving = false;
+let observingUid = null;
+const getActiveUid = () => isObserving ? observingUid : (currentUser ? currentUser.uid : null);
 
 // Lógica de Autenticación
 document.getElementById('loginBtn').onclick = async () => {
@@ -566,7 +649,6 @@ function showToast(message, type = 'success') {
 // --- Estado de Datos ---
 let clientes = [];
 let activoId = null;
-let isEditing = false;
 let currentFilter = 'all';
 
 function saldoActual(cliente) { return Math.max(0, (cliente.movimientos || []).reduce((a, m) => a + m.monto, 0)); }
@@ -587,12 +669,107 @@ function getEstatusCliente(c) {
   return { type: 'active', label: 'Activo', class: 'badge-active', progress: 'warning' };
 }
 
+// --- PANEL DE DUEÑO (Observador) ---
+window.abrirPanelDueno = async () => {
+  if (!currentUser || currentUser.email !== 'edgarmeza@admin.com') {
+    return showToast('Acceso denegado. Solo el administrador principal puede ver este panel.', 'error');
+  }
+
+  document.getElementById('modalDueno').classList.add('active');
+  const list = document.getElementById('listaEmpleados');
+  list.innerHTML = '<div style="grid-column: span 2; text-align: center; padding: 2rem;">Cargando perfiles...</div>';
+  
+  try {
+    const usersRef = ref(db, `artifacts/${safeAppId}/users`);
+    const snapshot = await get(usersRef);
+    list.innerHTML = '';
+    
+    if (snapshot.exists()) {
+      snapshot.forEach(child => {
+        const uid = child.key;
+        const data = child.val();
+        const email = (data.profile && data.profile.email) ? data.profile.email : 'Empleado (Sin Email)';
+        
+        let totalClientes = 0, totalCobrado = 0, totalPorCobrar = 0;
+        
+        if (data.clientes) {
+          const clientesArr = Object.values(data.clientes);
+          totalClientes = clientesArr.length;
+          clientesArr.forEach(c => {
+             const abonos = Math.abs((c.movimientos || []).filter(m => m.monto < 0).reduce((a,m)=>a+m.monto, 0));
+             const cargos = (c.movimientos || []).filter(m => m.monto > 0).reduce((a,m)=>a+m.monto, 0);
+             totalCobrado += abonos;
+             totalPorCobrar += Math.max(0, cargos - abonos);
+          });
+        }
+        
+        list.innerHTML += `
+          <div class="info-box" style="cursor: pointer; transition: transform 0.2s;" onclick="window.verEmpleado('${uid}', '${email}')">
+            <span style="color: var(--color-primary); font-size: var(--text-sm); display:flex; align-items:center; gap:0.5rem; text-transform:none;">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>
+              ${email} ${uid === currentUser.uid ? '<span style="font-weight:normal; color:var(--color-text-muted);">(Tú)</span>' : ''}
+            </span>
+            <div style="margin-top: 0.5rem; font-size: var(--text-xs); color: var(--color-text-muted);">
+              <div>Clientes Registrados: <strong style="color:var(--color-text);">${totalClientes}</strong></div>
+              <div>Cartera Activa: <strong class="text-warning">${fmt.format(totalPorCobrar)}</strong></div>
+              <div>Total Recaudado: <strong class="text-success">${fmt.format(totalCobrado)}</strong></div>
+            </div>
+            <button class="btn btn-secondary" style="width: 100%; margin-top: 1rem; padding: 0.5rem; font-size: var(--text-xs); border: 1px solid var(--color-primary);">Inspeccionar Cuenta</button>
+          </div>
+        `;
+      });
+    } else {
+      list.innerHTML = '<p style="grid-column: span 2; text-align: center;">No hay cuentas registradas en la base de datos.</p>';
+    }
+  } catch (e) {
+    list.innerHTML = '<p style="grid-column: span 2; text-align: center; color: var(--color-error);">Error al cargar. Revisa la conexión o reglas de Firebase.</p>';
+  }
+};
+
+window.verEmpleado = (uid, email) => {
+  document.getElementById('modalDueno').classList.remove('active');
+  isObserving = true;
+  observingUid = uid;
+  activoId = null; // Reiniciar vista
+  
+  // Mostrar banner y activar escucha para el usuario seleccionado
+  document.getElementById('observerBanner').style.display = 'flex';
+  document.getElementById('observerName').textContent = email;
+  
+  listenClientes(uid);
+  showToast(`Modo Observador: Viendo cuenta de ${email}`, 'success');
+};
+
+window.salirModoObservador = () => {
+  isObserving = false;
+  observingUid = null;
+  activoId = null;
+  
+  document.getElementById('observerBanner').style.display = 'none';
+  listenClientes(currentUser.uid);
+  showToast('Regresaste a tu propia cuenta.', 'success');
+};
+
 // --- Suscripción a REALTIME DATABASE ---
 function listenClientes(uid) {
+  if (!uid) return;
   const dbRef = ref(db, `artifacts/${safeAppId}/users/${uid}/clientes`);
+  
+  // Solo el dueño (el usuario real logueado) puede usar SU propio PIN, por ende escuchamos las settings del currentUser
+  const settingsRef = ref(db, `artifacts/${safeAppId}/users/${currentUser.uid}/settings`);
   
   if (unsubscribeSnap) unsubscribeSnap(); 
   
+  // Escuchar configuración (PIN de Seguridad)
+  onValue(settingsRef, (snap) => {
+    if(snap.exists() && snap.val().securityPin) {
+      adminPin = snap.val().securityPin;
+    } else {
+      adminPin = '0000'; // Default
+    }
+  });
+
+  // Escuchar a los clientes de la cuenta que se está observando
   unsubscribeSnap = onValue(dbRef, (snapshot) => {
     clientes = [];
     if (snapshot.exists()) {
@@ -603,7 +780,7 @@ function listenClientes(uid) {
       });
     }
     
-    document.getElementById('cloudStatus').innerHTML = `☁️ Base de datos conectada`;
+    document.getElementById('cloudStatus').innerHTML = `☁️ BD en vivo conectada`;
     document.getElementById('userEmailDisplay').textContent = auth.currentUser.email;
     
     if (activoId && !clientes.find(c => c.id === activoId)) activoId = null;
@@ -611,7 +788,7 @@ function listenClientes(uid) {
     renderGlobalStats();
     renderLista(); 
     renderWorkspace();
-  }, (error) => { showToast("Revisa las 'Reglas' de Realtime Database en Firebase.", "error"); });
+  }, (error) => { showToast("Error al sincronizar clientes. Verifica permisos.", "error"); });
 }
 
 // --- Renderizadores ---
@@ -759,7 +936,7 @@ function renderWorkspace() {
           <button class="mobile-back-btn no-print" onclick="window.volverALista()"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 18 9 12 15 6"></polyline></svg></button>
           <div>
             <h2 style="font-size: var(--text-xl); margin:0;">Dashboard Analytics</h2>
-            <p class="muted" style="margin:0;">Resumen del estado de tu negocio.</p>
+            <p class="muted" style="margin:0;">Resumen del estado de la cartera seleccionada.</p>
           </div>
         </div>
         <div class="detail-body dashboard-grid">
@@ -839,8 +1016,15 @@ function renderWorkspace() {
   
   const movs = c.movimientos || [];
   const movsHTML = movs.length === 0 ? '<p class="muted">No hay movimientos.</p>' : 
-    `<table><thead><tr><th>Fecha</th><th>Concepto</th><th>Monto</th></tr></thead><tbody>` + 
-    movs.map(m => `<tr><td>${formatDisplayDate(m.fecha)}</td><td>${m.concepto}</td><td class="${m.monto < 0 ? 'text-success' : 'text-warning'}">${fmt.format(m.monto)}</td></tr>`).join('') + `</tbody></table>`;
+    `<table><thead><tr><th>Fecha</th><th>Concepto</th><th>Monto</th><th class="no-print" style="width: 40px; text-align:right;"></th></tr></thead><tbody>` + 
+    movs.map((m, index) => `<tr>
+      <td>${formatDisplayDate(m.fecha)}</td>
+      <td>${m.concepto}</td>
+      <td class="${m.monto < 0 ? 'text-success' : 'text-warning'}">${fmt.format(m.monto)}</td>
+      <td class="no-print" style="text-align: right;">
+        ${m.monto < 0 ? `<button class="btn btn-ghost" style="padding: 0.3rem 0.5rem; color: var(--color-error); border: none;" onclick="window.confirmarEliminarAbono('${index}')" title="Borrar este abono"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg></button>` : ''}
+      </td>
+    </tr>`).join('') + `</tbody></table>`;
     
   const ticketTexto = `*GRUPO MEZA*\n---------------------------------\nCliente : ${c.nombre}\nBalance actual : ${fmt.format(saldo)}\n\n*** Ticket ***\nEnganche Inicial : ${fmt.format(c.enganche)}\nTotal Cargos : ${fmt.format(totalCosto)}\nSaldo Final : ${fmt.format(saldo)}\n\nFecha | Concepto | Monto\n---------------------------------\n` + movs.map(m => `${formatDisplayDate(m.fecha)} | ${m.concepto} | ${fmt.format(m.monto)}`).join('\n') + `\n---------------------------------\n*** GRACIAS POR SU COMPRA ***`;
 
@@ -1013,9 +1197,10 @@ document.getElementById('guardarBtn').onclick = async () => {
   if (!folio || !nombre || !producto) return showToast('Capture folio, nombre y producto.', 'warning'); 
   
   try {
+    const targetUid = getActiveUid();
     if (isEditing && activoId) {
       // Actualizar
-      const docRef = ref(db, `artifacts/${safeAppId}/users/${currentUser.uid}/clientes/${activoId}`);
+      const docRef = ref(db, `artifacts/${safeAppId}/users/${targetUid}/clientes/${activoId}`);
       await update(docRef, { folio, nombre, direccion, producto, telefono, abonoSemanal, notas });
       showToast('Cliente actualizado.', 'success');
     } else {
@@ -1027,7 +1212,7 @@ document.getElementById('guardarBtn').onclick = async () => {
       const movimientos = [{ fecha: today(), concepto: 'Saldo inicial (Costo)', monto: costo }];
       if (enganche > 0) movimientos.push({ fecha: today(), concepto: 'Enganche inicial', monto: -enganche });
       
-      const clientesRef = ref(db, `artifacts/${safeAppId}/users/${currentUser.uid}/clientes`);
+      const clientesRef = ref(db, `artifacts/${safeAppId}/users/${targetUid}/clientes`);
       const newDocRef = push(clientesRef);
       await set(newDocRef, { folio, nombre, direccion, producto, telefono, costo, enganche, abonoSemanal, notas, movimientos, createdAt: new Date().toISOString() });
       activoId = newDocRef.key; 
@@ -1044,27 +1229,91 @@ document.getElementById('guardarBtn').onclick = async () => {
   } catch(e) { showToast('Hubo un problema al guardar en la nube.', 'error'); console.error(e); }
 };
 
-// Modal Eliminar Cliente Segura
+// --- Configuración y PIN ---
+window.abrirConfiguracion = () => {
+  document.getElementById('pinActualInput').value = '';
+  document.getElementById('nuevoPinInput').value = '';
+  document.getElementById('modalConfiguracion').classList.add('active');
+};
+
+window.guardarNuevoPin = async () => {
+  if (!currentUser) return;
+  const pinActual = document.getElementById('pinActualInput').value;
+  const nuevoPin = document.getElementById('nuevoPinInput').value;
+  
+  if (pinActual !== adminPin) {
+    return showToast('El PIN actual es incorrecto.', 'error');
+  }
+  if (nuevoPin.length !== 4 || !/^\d+$/.test(nuevoPin)) {
+    return showToast('El nuevo PIN debe tener exactamente 4 números.', 'warning');
+  }
+  
+  try {
+    const settingsRef = ref(db, `artifacts/${safeAppId}/users/${currentUser.uid}/settings`);
+    await update(settingsRef, { securityPin: nuevoPin });
+    adminPin = nuevoPin;
+    document.getElementById('modalConfiguracion').classList.remove('active');
+    showToast('PIN de seguridad actualizado. No lo olvides.', 'success');
+  } catch(e) {
+    showToast('Error al guardar el nuevo PIN.', 'error');
+  }
+};
+
+// --- Eliminaciones Seguras (Con PIN) ---
 const modalEliminar = document.getElementById('modalEliminar');
+
 window.confirmarEliminarCliente = () => {
   if (!activoId || !currentUser) return;
+  targetAbonoIndex = null; // Indicador de que borramos un cliente, no un abono
+  document.getElementById('tituloModalEliminar').textContent = '¿Eliminar Cliente?';
+  document.getElementById('descModalEliminar').textContent = 'Se borrará el historial de pagos y dejará de existir en la cuenta. Requiere PIN de administrador.';
+  document.getElementById('pinEliminarInput').value = '';
   modalEliminar.classList.add('active');
 };
+
+window.confirmarEliminarAbono = (index) => {
+  if (!activoId || !currentUser) return;
+  targetAbonoIndex = parseInt(index);
+  document.getElementById('tituloModalEliminar').textContent = '¿Borrar este Abono?';
+  document.getElementById('descModalEliminar').textContent = 'El abono desaparecerá y el saldo pendiente aumentará. Requiere PIN de administrador.';
+  document.getElementById('pinEliminarInput').value = '';
+  modalEliminar.classList.add('active');
+};
+
 document.getElementById('cancelarEliminarBtn').onclick = () => { modalEliminar.classList.remove('active'); };
 
 document.getElementById('confirmarEliminarBtn').onclick = async () => {
   if (!activoId || !currentUser) return;
+  
+  const inputPin = document.getElementById('pinEliminarInput').value;
+  if (inputPin !== adminPin) {
+    return showToast('PIN incorrecto. Permiso denegado.', 'error');
+  }
+  
   try { 
-    const docRef = ref(db, `artifacts/${safeAppId}/users/${currentUser.uid}/clientes/${activoId}`);
-    await remove(docRef);
-    modalEliminar.classList.remove('active');
-    showToast('Cliente eliminado permanentemente.', 'success'); 
+    const targetUid = getActiveUid();
     
-    // Regresar a listado si estamos en móvil
-    window.volverALista();
-    activoId = null;
+    if (targetAbonoIndex !== null) {
+      // BORRAR ABONO INDIVIDUAL
+      const c = clientes.find(c => c.id === activoId);
+      let updatedMovimientos = [...(c.movimientos || [])];
+      updatedMovimientos.splice(targetAbonoIndex, 1);
+      
+      const docRef = ref(db, `artifacts/${safeAppId}/users/${targetUid}/clientes/${activoId}`);
+      await update(docRef, { movimientos: updatedMovimientos });
+      modalEliminar.classList.remove('active');
+      showToast('Abono eliminado y saldo recalculado.', 'success');
+    } else {
+      // BORRAR CLIENTE COMPLETO
+      const docRef = ref(db, `artifacts/${safeAppId}/users/${targetUid}/clientes/${activoId}`);
+      await remove(docRef);
+      modalEliminar.classList.remove('active');
+      showToast('Cliente eliminado permanentemente.', 'success'); 
+      if (window.innerWidth <= 768) window.volverALista();
+      activoId = null;
+    }
   } 
-  catch(e) { showToast('Error al intentar eliminar.', 'error'); }
+  catch(e) { showToast('Error al intentar procesar el borrado.', 'error'); }
 };
 
 // Registro de Abonos (RTDB)
@@ -1085,7 +1334,8 @@ window.registrarAbono = async () => {
   updatedMovimientos.sort((a, b) => new Date(a.fecha) - new Date(b.fecha));
   
   try {
-    const docRef = ref(db, `artifacts/${safeAppId}/users/${currentUser.uid}/clientes/${c.id}`);
+    const targetUid = getActiveUid();
+    const docRef = ref(db, `artifacts/${safeAppId}/users/${targetUid}/clientes/${c.id}`);
     await update(docRef, { movimientos: updatedMovimientos });
     showToast(`Pago por ${fmt.format(aplicado)} aplicado exitosamente.`, 'success');
   } catch(e) { showToast('Error al procesar el pago.', 'error'); }
@@ -1207,10 +1457,6 @@ window.enviarTicketWhatsApp = () => {
 
 window.imprimirTicket = () => {
   if (!activoId) return;
-  
-  // Ocultar main app y asegurar que el área de impresión térmica se vea
-  const originalDisplay = document.querySelector('.app').style.display;
-  
   window.print();
 };
 
@@ -1233,14 +1479,27 @@ if (auth) {
     currentUser = user;
     const overlay = document.getElementById('authOverlay');
     const userMenu = document.getElementById('userMenuPanel');
+    const ownerPanelBtn = document.getElementById('ownerPanelBtn');
     
     if (user) {
       overlay.style.display = 'none';
       userMenu.style.display = 'flex';
+      
+      // Mostrar Panel de Dueño solo al administrador
+      if (user.email === 'edgarmeza@admin.com') {
+        ownerPanelBtn.style.display = 'inline-flex';
+      } else {
+        ownerPanelBtn.style.display = 'none';
+      }
+      
+      // Guardar el email del usuario recién conectado para que el Dueño pueda identificarlo en su panel
+      set(ref(db, `artifacts/${safeAppId}/users/${user.uid}/profile`), { email: user.email, lastLogin: new Date().toISOString() });
+      
       listenClientes(user.uid);
     } else {
       overlay.style.display = 'flex';
       userMenu.style.display = 'none';
+      if (ownerPanelBtn) ownerPanelBtn.style.display = 'none';
       document.getElementById('cloudStatus').innerHTML = 'Inicia sesión...';
       
       if (unsubscribeSnap) { unsubscribeSnap(); unsubscribeSnap = null; }
