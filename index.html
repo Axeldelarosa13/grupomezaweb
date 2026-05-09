@@ -552,6 +552,35 @@
     </div>
   </div>
 
+  <!-- MODAL: NUEVA COMPRA EXTRA -->
+  <div id="modalNuevaCompra" class="modal-overlay">
+    <div class="modal-content" style="max-width: 500px;">
+      <div class="modal-header">
+        <h2 style="font-size: var(--text-lg); display: flex; align-items: center; gap: 0.5rem;">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+          Añadir Nueva Compra al Cliente
+        </h2>
+        <button class="close-btn" onclick="document.getElementById('modalNuevaCompra').classList.remove('active')">&times;</button>
+      </div>
+      <p style="font-size: var(--text-sm); color: var(--color-text-muted); margin-top: 0;">Agrega un nuevo artículo a la cuenta actual. Su saldo pendiente aumentará automáticamente.</p>
+      
+      <div class="grid-form" style="margin-top: 1.5rem;">
+        <label>Nuevo Producto/Servicio
+          <input type="text" id="nuevoProductoExt" placeholder="Ej. Microondas">
+        </label>
+        <div class="grid-form two">
+          <label>Costo de Compra ($)
+            <input type="number" id="nuevoCostoExt" placeholder="Ej. 1500" min="0" step="0.01">
+          </label>
+          <label>Nuevo Abono Semanal ($)
+            <input type="number" id="nuevoAbonoExt" placeholder="Ej. 300" min="0" step="0.01">
+          </label>
+        </div>
+        <button class="btn btn-primary" id="guardarNuevaCompraBtn" style="margin-top: 1rem;">Agregar a la Cuenta</button>
+      </div>
+    </div>
+  </div>
+
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
 import { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword, signOut, onAuthStateChanged, signInWithCustomToken } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
@@ -1060,8 +1089,9 @@ function renderWorkspace() {
         
         <div class="actions-detail">
           <button class="btn btn-secondary" onclick="window.abrirModalEdicion()">Editar / Notas</button>
+          <button class="btn btn-secondary" onclick="window.abrirModalNuevaCompra()" style="border: 1px dashed var(--color-primary); background: transparent;">➕ Añadir Compra Extra</button>
           
-          <button class="btn btn-whatsapp" onclick="window.enviarRecordatorioWhatsApp()" style="background: #128C7E;" title="Enviar recordatorio de cobro por WhatsApp">
+          <button class="btn btn-whatsapp" onclick="window.enviarRecordatorioWhatsApp()" style="background: #128C7E; margin-top: 0.5rem;" title="Enviar recordatorio de cobro por WhatsApp">
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"></path></svg>
             Recordar Pago
           </button>
@@ -1260,6 +1290,56 @@ window.guardarNuevoPin = async () => {
     showToast('PIN de seguridad actualizado. No lo olvides.', 'success');
   } catch(e) {
     showToast('Error al guardar el nuevo PIN.', 'error');
+  }
+};
+
+// --- NUEVA COMPRA EXTRA ---
+window.abrirModalNuevaCompra = () => {
+  if (!activoId) return;
+  const c = clientes.find(c => c.id === activoId);
+  document.getElementById('nuevoProductoExt').value = '';
+  document.getElementById('nuevoCostoExt').value = '';
+  document.getElementById('nuevoAbonoExt').value = c.abonoSemanal || 0;
+  document.getElementById('modalNuevaCompra').classList.add('active');
+};
+
+document.getElementById('guardarNuevaCompraBtn').onclick = async () => {
+  if (!activoId || !currentUser) return;
+  
+  const nuevoProducto = document.getElementById('nuevoProductoExt').value.trim();
+  const nuevoCosto = Number(document.getElementById('nuevoCostoExt').value || 0);
+  const nuevoAbono = Number(document.getElementById('nuevoAbonoExt').value || 0);
+  
+  if (!nuevoProducto || nuevoCosto <= 0) {
+    return showToast('Ingresa el nombre del producto y un costo mayor a 0.', 'warning');
+  }
+  
+  const c = clientes.find(c => c.id === activoId);
+  
+  // Modificar los valores combinados
+  const productoFinal = c.producto + " + " + nuevoProducto;
+  const costoFinal = Number(c.costo) + nuevoCosto;
+  
+  const cargoMovimiento = { fecha: today(), concepto: 'Nueva compra: ' + nuevoProducto, monto: nuevoCosto };
+  
+  let updatedMovimientos = [...(c.movimientos || []), cargoMovimiento];
+  updatedMovimientos.sort((a, b) => new Date(a.fecha) - new Date(b.fecha)); // Reordenar por fechas
+  
+  try {
+    const targetUid = getActiveUid();
+    const docRef = ref(db, `${dbRoot}/users/${targetUid}/clientes/${activoId}`);
+    
+    await update(docRef, { 
+      producto: productoFinal,
+      costo: costoFinal,
+      abonoSemanal: nuevoAbono,
+      movimientos: updatedMovimientos 
+    });
+    
+    document.getElementById('modalNuevaCompra').classList.remove('active');
+    showToast('Nueva compra agregada exitosamente a la cuenta.', 'success');
+  } catch(e) {
+    showToast('Error al agregar nueva compra.', 'error');
   }
 };
 
