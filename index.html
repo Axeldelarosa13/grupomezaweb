@@ -809,7 +809,7 @@
         </h2>
         <button class="close-btn" onclick="document.getElementById('modalDueno').classList.remove('active')">&times;</button>
       </div>
-      <p class="muted" style="margin-top:0;">Selecciona el perfil de cualquier empleado para entrar a su cuenta en modo observador, ver sus estadísticas detalladas y corregir errores si es necesario. También puedes suspender, reactivar o quitar accesos sin borrar su cartera.</p>
+      <p class="muted" style="margin-top:0;">Selecciona el perfil de cualquier empleado para entrar a su cuenta en modo observador, ver sus estadísticas detalladas y corregir errores si es necesario. También puedes suspender, reactivar, quitar acceso sin borrar cartera o borrar la cuenta del empleado dentro de la app.</p>
       
       <div id="listaEmpleados" class="grid-form two" style="margin-top: 1.5rem;">
         <!-- Empleados inyectados por JS -->
@@ -1516,6 +1516,128 @@ function generarTicketAbonoHTML(c, detalle) {
   `;
 }
 
+function generarDocumentoImpresionTicket(ticketHTML, width = ticketPaperWidth) {
+  const ticketWidth = width === '80' ? '80' : '58';
+  const paperWidth = ticketWidth === '80' ? '80mm' : '58mm';
+  const contentWidth = ticketWidth === '80' ? '72mm' : '54mm';
+  const fontSize = ticketWidth === '80' ? '12px' : '10px';
+  const logoSize = ticketWidth === '80' ? '16mm' : '12mm';
+  const titleSize = ticketWidth === '80' ? '.95rem' : '.82rem';
+
+  return `<!doctype html>
+<html lang="es" data-ticket-width="${ticketWidth}">
+<head>
+  <meta charset="utf-8">
+  <title>Ticket Grupo Meza</title>
+  <style id="dynamicPageStyle">@page { size: ${paperWidth} 120mm; margin: 0; }</style>
+  <style>
+    * { box-sizing: border-box; }
+    html, body { margin: 0; padding: 0; width: ${paperWidth}; min-width: ${paperWidth}; background: #fff; color: #000; }
+    body { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+    .ticket-print-page { width: ${paperWidth}; padding: 1.5mm 0 2mm; background: #fff; }
+    .ticket {
+      background: #fff;
+      border: none;
+      border-radius: 0;
+      box-shadow: none;
+      color: #000;
+      font-family: "Courier New", Courier, monospace;
+      font-size: ${fontSize};
+      line-height: 1.28;
+      margin: 0 auto;
+      max-width: ${contentWidth};
+      overflow-wrap: anywhere;
+      padding: 2mm;
+      width: ${contentWidth};
+    }
+    .empty-state { padding: 1rem; text-align: center; }
+    .receipt-head { display: grid; grid-template-columns: ${logoSize} 1fr; gap: ${ticketWidth === '80' ? '3mm' : '2mm'}; align-items: center; border-bottom: 1px dashed #a9b3af; padding-bottom: 2mm; margin-bottom: 2mm; page-break-inside: avoid; }
+    .receipt-logo { width: ${logoSize}; height: ${logoSize}; object-fit: cover; border-radius: .25rem; border: 1px solid #d1d5db; }
+    .receipt-title { font-family: "Segoe UI", Roboto, Arial, sans-serif; font-weight: 900; font-size: ${titleSize}; letter-spacing: 0; margin: 0; line-height: 1.05; }
+    .receipt-subtitle { margin: .08rem 0 0; font-size: .68rem; color: #4b5563; font-family: "Segoe UI", Roboto, Arial, sans-serif; }
+    .receipt-meta { display: grid; grid-template-columns: ${ticketWidth === '80' ? '1fr 1fr' : '1fr'}; gap: ${ticketWidth === '80' ? '.4rem .75rem' : '1.2mm'}; margin-bottom: 2mm; font-size: .72rem; }
+    .receipt-meta span, .receipt-row span { color: #4b5563; display: block; font-size: .62rem; text-transform: uppercase; font-family: "Segoe UI", Roboto, Arial, sans-serif; font-weight: 800; letter-spacing: .04em; }
+    .receipt-meta strong, .receipt-row strong { font-weight: 900; color: #111827; }
+    .receipt-client { border: 1px solid #e5e7eb; border-radius: .3rem; padding: 1.8mm; margin-bottom: 2mm; font-family: "Segoe UI", Roboto, Arial, sans-serif; page-break-inside: avoid; }
+    .receipt-client strong { display: block; font-size: ${ticketWidth === '80' ? '.95rem' : '.82rem'}; line-height: 1.15; }
+    .receipt-table { width: 100%; border-collapse: collapse; margin: 2mm 0; font-family: "Segoe UI", Roboto, Arial, sans-serif; table-layout: fixed; }
+    .receipt-table td { padding: 1.5mm 0; border: 0; border-bottom: 1px solid #e5e7eb; text-align: left; vertical-align: middle; }
+    .receipt-table td:last-child { text-align: right; font-weight: 900; }
+    .receipt-table .highlight td { border-bottom: 2px solid #111827; font-size: ${ticketWidth === '80' ? '1rem' : '.9rem'}; color: #0f766e; }
+    .receipt-table tr, .receipt-row, .receipt-footer { page-break-inside: avoid; }
+    .receipt-footer { text-align: center; border-top: 1px dashed #a9b3af; padding-top: 2mm; margin-top: 2mm; font-size: .62rem; color: #4b5563; }
+    .no-print, .ticket-size-control { display: none !important; }
+    @media print {
+      html, body { margin: 0 !important; padding: 0 !important; width: ${paperWidth}; min-width: ${paperWidth}; background: #fff !important; }
+      .ticket-print-page { padding: 1.5mm 0 2mm; }
+    }
+  </style>
+</head>
+<body>
+  <main class="ticket-print-page">${ticketHTML}</main>
+</body>
+</html>`;
+}
+
+function esperarImagenesDocumento(doc, timeout = 1200) {
+  const images = Array.from(doc.images || []);
+  if (images.length === 0) return Promise.resolve();
+  const done = Promise.all(images.map(img => {
+    if (img.complete) return Promise.resolve();
+    return new Promise(resolve => {
+      img.onload = resolve;
+      img.onerror = resolve;
+    });
+  }));
+  return Promise.race([done, new Promise(resolve => setTimeout(resolve, timeout))]);
+}
+
+async function imprimirTicketAislado(ticketHTML) {
+  const width = ticketPaperWidth === '80' ? '80' : '58';
+  const paperWidthMm = width === '80' ? 80 : 58;
+  const minHeightMm = width === '80' ? 95 : 82;
+  const iframe = document.createElement('iframe');
+  iframe.title = 'Ticket Grupo Meza';
+  iframe.setAttribute('aria-hidden', 'true');
+  iframe.style.position = 'fixed';
+  iframe.style.left = '-10000px';
+  iframe.style.top = '0';
+  iframe.style.width = `${paperWidthMm}mm`;
+  iframe.style.height = '1px';
+  iframe.style.opacity = '0';
+  iframe.style.border = '0';
+  iframe.style.pointerEvents = 'none';
+  document.body.appendChild(iframe);
+
+  const doc = iframe.contentDocument || iframe.contentWindow.document;
+  doc.open();
+  doc.write(generarDocumentoImpresionTicket(ticketHTML, width));
+  doc.close();
+
+  await new Promise(resolve => setTimeout(resolve, 80));
+  await esperarImagenesDocumento(doc);
+  if (doc.fonts && doc.fonts.ready) {
+    await Promise.race([doc.fonts.ready, new Promise(resolve => setTimeout(resolve, 500))]);
+  }
+
+  const page = doc.querySelector('.ticket-print-page');
+  const ticket = doc.querySelector('.ticket');
+  const pageStyle = page ? doc.defaultView.getComputedStyle(page) : null;
+  const pagePaddingY = pageStyle ? (parseFloat(pageStyle.paddingTop) || 0) + (parseFloat(pageStyle.paddingBottom) || 0) : 0;
+  const ticketHeightPx = ticket ? Math.max(ticket.getBoundingClientRect().height, ticket.scrollHeight) : 0;
+  const heightPx = ticketHeightPx + pagePaddingY;
+  const measuredHeightMm = Math.ceil((heightPx * 25.4) / 96) + 10;
+  const finalHeightMm = Math.max(minHeightMm, measuredHeightMm);
+  const dynamicStyle = doc.getElementById('dynamicPageStyle');
+  if (dynamicStyle) dynamicStyle.textContent = `@page { size: ${paperWidthMm}mm ${finalHeightMm}mm; margin: 0; }`;
+
+  const cleanup = () => setTimeout(() => iframe.remove(), 600);
+  iframe.contentWindow.addEventListener('afterprint', cleanup, { once: true });
+  iframe.contentWindow.focus();
+  iframe.contentWindow.print();
+  setTimeout(cleanup, 4000);
+}
+
 function obtenerTelefonoWhatsApp(c) {
   let telefonoLimpio = (c.telefono || '').replace(/\D/g, '');
   if (telefonoLimpio.length === 10) telefonoLimpio = '52' + telefonoLimpio;
@@ -1597,7 +1719,7 @@ function getEstatusCliente(c) {
 }
 
 function estadoAccesoUsuario(profile = {}) {
-  const status = profile.accessStatus || 'active';
+  const status = profile.accountDeleted ? 'deleted' : (profile.accessStatus || 'active');
   if (status === 'suspended') return { status, label: 'Suspendido', class: 'badge-access-suspended' };
   if (status === 'deleted') return { status, label: 'Sin acceso', class: 'badge-access-deleted' };
   return { status: 'active', label: 'Activo', class: 'badge-access-active' };
@@ -1623,10 +1745,13 @@ window.abrirPanelDueno = async () => {
     list.innerHTML = '';
     
     if (snapshot.exists()) {
+      let visibleUsers = 0;
       snapshot.forEach(child => {
         const uid = child.key;
         const data = child.val();
         const profile = data.profile || {};
+        if (profile.accountDeleted) return;
+        visibleUsers += 1;
         const email = profile.email ? profile.email : 'Empleado (Sin Email)';
         const acceso = estadoAccesoUsuario(profile);
         const puedeGestionar = uid !== currentUser.uid;
@@ -1664,11 +1789,15 @@ window.abrirPanelDueno = async () => {
                   ? `<button class="btn btn-danger" onclick="window.cambiarAccesoUsuario('${uid}', 'suspended', '${jsString(email)}')">Suspender</button>`
                   : `<button class="btn btn-secondary" onclick="window.cambiarAccesoUsuario('${uid}', 'active', '${jsString(email)}')">Reactivar</button>`}
                 <button class="btn btn-ghost" style="color:var(--color-error); border-color:var(--color-error);" onclick="window.cambiarAccesoUsuario('${uid}', 'deleted', '${jsString(email)}')">Quitar acceso</button>
+                <button class="btn btn-danger" style="grid-column:1/-1;" onclick="window.borrarCuentaEmpleado('${uid}', '${jsString(email)}')">Borrar cuenta</button>
               ` : `<button class="btn btn-ghost" disabled style="grid-column:1/-1;">Cuenta administradora</button>`}
             </div>
           </div>
         `;
       });
+      if (visibleUsers === 0) {
+        list.innerHTML = '<p style="grid-column: span 2; text-align: center;">No hay cuentas activas de empleados en la base de datos.</p>';
+      }
     } else {
       list.innerHTML = '<p style="grid-column: span 2; text-align: center;">No hay cuentas registradas en la base de datos.</p>';
     }
@@ -1735,6 +1864,50 @@ window.cambiarAccesoUsuario = async (uid, status, email = '') => {
 };
 
 // --- Suscripción a REALTIME DATABASE ---
+window.borrarCuentaEmpleado = async (uid, email = '') => {
+  if (!currentUser || currentUser.email !== 'edgarmeza@admin.com') {
+    return showToast('Solo el administrador puede borrar cuentas de empleados.', 'error');
+  }
+  if (uid === currentUser.uid) {
+    return showToast('No puedes borrar la cuenta administradora desde este panel.', 'warning');
+  }
+
+  const nombre = email || 'este empleado';
+  const aviso = `Seguro que deseas borrar la cuenta de ${nombre}?\n\nSe eliminara su cartera, configuracion y datos guardados dentro de la app. Tambien quedara bloqueado para entrar de nuevo.`;
+  if (!window.confirm(aviso)) return;
+
+  const confirmacion = window.prompt('Para confirmar el borrado escribe BORRAR');
+  if ((confirmacion || '').trim().toUpperCase() !== 'BORRAR') {
+    return showToast('Borrado cancelado.', 'warning');
+  }
+
+  try {
+    const now = new Date().toISOString();
+    const userRef = ref(db, `${dbRoot}/users/${uid}`);
+    const profileRef = ref(db, `${dbRoot}/users/${uid}/profile`);
+
+    await remove(userRef);
+    await set(profileRef, {
+      email,
+      accessStatus: 'deleted',
+      accountDeleted: true,
+      deletedAt: now,
+      deletedBy: currentUser.email,
+      accessUpdatedAt: now,
+      accessUpdatedBy: currentUser.email
+    });
+
+    if (isObserving && observingUid === uid) {
+      window.salirModoObservador();
+    }
+
+    showToast(`Cuenta borrada y acceso bloqueado: ${nombre}.`, 'success');
+    window.abrirPanelDueno();
+  } catch (e) {
+    showToast('No se pudo borrar la cuenta: ' + e.message, 'error');
+  }
+};
+
 function listenClientes(uid) {
   if (!uid) return;
   const dbRef = ref(db, `${dbRoot}/users/${uid}/clientes`);
@@ -2315,7 +2488,7 @@ function renderWorkspace() {
         <td>${detalleAbono ? escapeHTML(detalleAbono.cobrador) : '-'}</td>
         <td class="${m.monto < 0 ? 'text-success' : 'text-warning'}">${fmt.format(m.monto)}</td>
         <td class="no-print" style="text-align: right; white-space: nowrap;">
-          ${detalleAbono ? `<button class="btn btn-ghost" style="padding: 0.3rem 0.5rem; border: none;" onclick="window.seleccionarRecibo('${index}')" title="Ver ticket de este abono"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 2v20l2-1 2 1 2-1 2 1 2-1 2 1 2-1 2 1V2z"></path><path d="M8 7h8"></path><path d="M8 11h8"></path><path d="M8 15h5"></path></svg></button>` : ''}
+          ${detalleAbono ? `<button class="btn btn-ghost" style="padding: 0.3rem 0.5rem; border: none;" onclick="window.imprimirReciboHistorial('${index}')" title="Imprimir ticket de este abono"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 2v20l2-1 2 1 2-1 2 1 2-1 2 1 2-1 2 1V2z"></path><path d="M8 7h8"></path><path d="M8 11h8"></path><path d="M8 15h5"></path></svg></button>` : ''}
           ${m.monto < 0 && isAdmin ? `<button class="btn btn-ghost" style="padding: 0.3rem 0.5rem; color: var(--color-error); border: none;" onclick="window.confirmarEliminarAbono('${index}')" title="Borrar este abono"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg></button>` : ''}
         </td>
       </tr>`;
@@ -2463,6 +2636,26 @@ window.seleccionarRecibo = (index) => {
   reciboIndexSeleccionado = Number(index);
   folioReciboSeleccionado = null;
   renderWorkspace();
+};
+
+window.imprimirReciboHistorial = async (index) => {
+  if (!activoId) return;
+  const c = clientes.find(c => c.id === activoId);
+  const reciboIndex = Number(index);
+  const recibo = c ? detalleAbonoCliente(c, reciboIndex) : null;
+  if (!c || !recibo) {
+    return showToast('Este movimiento no tiene ticket para imprimir.', 'warning');
+  }
+
+  reciboIndexSeleccionado = reciboIndex;
+  folioReciboSeleccionado = null;
+
+  try {
+    await imprimirTicketAislado(generarTicketAbonoHTML(c, recibo));
+    showToast(`Ticket ${recibo.folioRecibo} abierto para imprimir.`, 'success');
+  } catch (e) {
+    showToast('No se pudo preparar este ticket para imprimir.', 'error');
+  }
 };
 
 window.cambiarTamanoTicket = (width) => {
@@ -3094,11 +3287,17 @@ window.enviarTicketWhatsApp = () => {
   window.open(`https://wa.me/${telefonoLimpio}?text=${encodeURIComponent(ticketTexto)}`, '_blank');
 };
 
-window.imprimirTicket = () => {
+window.imprimirTicket = async () => {
   if (!activoId) return;
   const c = clientes.find(c => c.id === activoId);
-  if (!c || !obtenerReciboActivo(c)) return showToast('Primero registra un abono para imprimir el ticket.', 'warning');
-  window.print();
+  const recibo = c ? obtenerReciboActivo(c) : null;
+  if (!c || !recibo) return showToast('Primero registra un abono para imprimir el ticket.', 'warning');
+  try {
+    await imprimirTicketAislado(generarTicketAbonoHTML(c, recibo));
+    showToast('Ticket abierto para imprimir. Si aparece URL o fecha, desactiva encabezados y pies en la vista de impresion.', 'success');
+  } catch (e) {
+    showToast('No se pudo preparar el ticket para imprimir.', 'error');
+  }
 };
 
 // --- Tema y Paleta ---
