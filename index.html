@@ -195,7 +195,7 @@
     .brand-text h1 { font-size: var(--text-lg); font-weight: 900; margin: 0; letter-spacing: -0.02em; }
     .brand-text p { margin: 0; font-size: var(--text-xs); color: var(--color-text-muted); }
     
-    .logo-container { width: 50px; height: 50px; border-radius: var(--radius-md); overflow: hidden; background: var(--color-surface-2); border: 1px solid var(--color-border); display: grid; place-items: center; flex-shrink: 0; box-shadow: var(--shadow-sm); }
+    .logo-container { width: 42px; height: 42px; border-radius: var(--radius-md); overflow: hidden; background: var(--color-surface-2); border: 1px solid var(--color-border); display: grid; place-items: center; flex-shrink: 0; box-shadow: var(--shadow-sm); }
     .logo-container img { width: 100%; height: 100%; object-fit: cover; filter: grayscale(0%); }
     
     .user-menu { display: flex; align-items: center; gap: 1rem; padding-left: 1rem; border-left: 1px solid var(--color-border); margin-left: 0.5rem; }
@@ -299,15 +299,16 @@
     .ticket { background: #fff; padding: 2mm; border-radius: var(--radius-lg); border: 1px dashed #9aa5a1; font-family: 'Courier New', Courier, monospace; font-size: var(--ticket-font-size); line-height: 1.28; color: #000; margin: 0 auto; width: var(--ticket-content-width); max-width: 100%; overflow-wrap: anywhere; }
     .receipt-ticket { width: var(--ticket-content-width); }
     .receipt-head { display: block; text-align: center; border-bottom: 1px dashed #a9b3af; padding-bottom: 2mm; margin-bottom: 2mm; }
-    .receipt-logo { width: 30mm; max-width: 100%; height: auto; display: block; object-fit: contain; margin: 0 auto 1.5mm; border-radius: .25rem; flex-shrink: 0; }
+    .receipt-logo { width: 22mm; max-width: 100%; height: auto; display: block; object-fit: contain; margin: 0 auto 1.5mm; border-radius: .25rem; flex-shrink: 0; }
     .receipt-title { font-family: var(--font-body); font-weight: 900; font-size: .82rem; letter-spacing: 0; margin: 0; line-height: 1.05; }
     .receipt-subtitle { margin: .08rem 0 0; font-size: .68rem; color: #4b5563; font-family: var(--font-body); }
     .receipt-meta { display: grid; grid-template-columns: 1fr; gap: 1.2mm; margin-bottom: 2mm; font-size: .72rem; }
     [data-ticket-width="80"] .receipt-meta { grid-template-columns: 1fr 1fr; gap: .4rem .75rem; }
-    [data-ticket-width="80"] .receipt-logo { width: 42mm; }
+    [data-ticket-width="80"] .receipt-logo { width: 30mm; }
     [data-ticket-width="80"] .receipt-title { font-size: .95rem; }
     .receipt-meta span, .receipt-row span { color: #4b5563; display: block; font-size: .62rem; text-transform: uppercase; font-family: var(--font-body); font-weight: 800; letter-spacing: .04em; }
     .receipt-meta strong, .receipt-row strong { font-weight: 900; color: #111827; }
+    .receipt-meta small { display: block; margin-top: .5mm; color: #4b5563; font-size: .65rem; font-family: var(--font-body); font-weight: 800; }
     .receipt-client { border: 1px solid #e5e7eb; border-radius: .3rem; padding: 1.8mm; margin-bottom: 2mm; font-family: var(--font-body); }
     .receipt-client strong { display: block; font-size: .82rem; line-height: 1.15; }
     [data-ticket-width="80"] .receipt-client strong { font-size: .95rem; }
@@ -575,7 +576,7 @@
       /* Topbar Compacta */
       .topbar { position: sticky; top: 0; z-index: 50; padding: .65rem; flex-wrap: wrap; gap: .55rem; justify-content: flex-start; box-shadow: var(--shadow-md); border-radius: 0 0 var(--radius-lg) var(--radius-lg); margin: -.6rem -.6rem 0; }
       .brand { justify-content: flex-start; width: 100%; min-width: 0; gap: .75rem; }
-      .brand .logo-container { width: 40px; height: 40px; }
+      .brand .logo-container { width: 34px; height: 34px; }
       .brand-text { min-width: 0; }
       .brand-text h1 { font-size: .98rem; line-height: 1.1; }
       .brand-text p { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 100%; }
@@ -726,7 +727,7 @@
   <div id="authOverlay" class="auth-overlay" style="display: flex;">
     <div class="auth-card">
       <div style="text-align: center; margin-bottom: 1.5rem; display: flex; flex-direction: column; align-items: center;">
-        <div class="logo-container" style="width: 80px; height: 80px; margin-bottom: 1rem; border-radius: 20px;">
+        <div class="logo-container" style="width: 62px; height: 62px; margin-bottom: 1rem; border-radius: 16px;">
           <img src="assets/grupo-meza-logo.jpg?v=logo-principal-20260627" alt="Logo Grupo Meza" onerror="this.style.display='none'; this.nextElementSibling.style.display='block';">
           <svg style="display:none; width:40px; height:40px; color:var(--color-primary);" viewBox="0 0 64 64" aria-hidden="true"><rect width="64" height="64" rx="14" fill="currentColor"></rect><text x="32" y="39" text-anchor="middle" font-family="Arial, sans-serif" font-size="22" font-weight="900" fill="#fff">GM</text></svg>
         </div>
@@ -936,7 +937,10 @@
             </h3>
             <small id="ownerMapStatus">Esperando ubicaciones activas...</small>
           </div>
-          <button class="btn btn-secondary" onclick="window.centrarMapaCobradores()" title="Centrar mapa con cobradores activos">Centrar mapa</button>
+          <div style="display:flex; gap:.5rem; flex-wrap:wrap; justify-content:flex-end;">
+            <button class="btn btn-secondary" onclick="window.centrarMapaCobradores()" title="Centrar mapa con cobradores activos">Centrar mapa</button>
+            <button class="btn btn-danger" onclick="window.cerrarSesionesTodos()" title="Cerrar sesion en todas las cuentas">Cerrar sesiones</button>
+          </div>
         </div>
         <div id="ownerLiveMap" class="owner-live-map empty">Sin ubicaciones activas por el momento.</div>
         <div id="ownerMapList" class="owner-map-list"></div>
@@ -1004,14 +1008,28 @@
 
   <!-- MODAL: CONFIGURACIÓN DE SEGURIDAD -->
   <div id="modalConfiguracion" class="modal-overlay">
-    <div class="modal-content" style="max-width: 400px;">
+    <div class="modal-content" style="max-width: 520px;">
       <div class="modal-header">
         <h2 style="font-size: var(--text-lg); display: flex; align-items: center; gap: 0.5rem;">
           <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>
-          Seguridad y PIN
+          Configuracion
         </h2>
         <button class="close-btn" onclick="document.getElementById('modalConfiguracion').classList.remove('active')">&times;</button>
       </div>
+      <div class="info-box" style="margin-bottom: 1rem;">
+        <span>Datos del cobrador para tickets</span>
+        <p style="font-size: var(--text-sm); color: var(--color-text-muted); margin: .35rem 0 1rem;">Estos datos salen impresos en el ticket segun la cuenta que realiza el cobro.</p>
+        <div class="grid-form">
+          <label>Nombre en ticket
+            <input type="text" id="nombreCobradorInput" placeholder="Ej. Edgar Meza">
+          </label>
+          <label>Numero del cobrador
+            <input type="tel" id="telefonoCobradorInput" placeholder="Ej. 315 000 0000">
+          </label>
+          <button class="btn btn-primary" onclick="window.guardarDatosCobradorActual()" style="margin-top: 1rem;">Guardar Datos del Ticket</button>
+        </div>
+      </div>
+      <div id="configPinSection">
       <p style="font-size: var(--text-sm); color: var(--color-text-muted); margin-top: 0;">El PIN protege contra borrados malintencionados o accidentales de clientes y abonos. <strong>Solo tú (el administrador) debe conocerlo.</strong> (Por defecto: 0000)</p>
       
       <div class="grid-form" style="margin-top: 1.5rem;">
@@ -1022,6 +1040,32 @@
           <input type="password" id="nuevoPinInput" placeholder="Ej. 1234" maxlength="4">
         </label>
         <button class="btn btn-primary" onclick="window.guardarNuevoPin()" style="margin-top: 1rem;">Actualizar PIN Secreto</button>
+      </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL: DATOS DE COBRADOR -->
+  <div id="modalDatosCobrador" class="modal-overlay">
+    <div class="modal-content" style="max-width: 460px;">
+      <div class="modal-header">
+        <h2 style="font-size: var(--text-lg); display: flex; align-items: center; gap: 0.5rem;">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle><path d="M22 8h-6"></path><path d="M19 5v6"></path></svg>
+          Datos para ticket
+        </h2>
+        <button class="close-btn" onclick="document.getElementById('modalDatosCobrador').classList.remove('active')">&times;</button>
+      </div>
+      <input type="hidden" id="datosCobradorUid">
+      <input type="hidden" id="datosCobradorEmail">
+      <p id="datosCobradorCuenta" style="font-size: var(--text-sm); color: var(--color-text-muted); margin-top: 0;"></p>
+      <div class="grid-form" style="margin-top: 1rem;">
+        <label>Nombre en ticket
+          <input type="text" id="datosCobradorNombre" placeholder="Ej. Ramon Lopez">
+        </label>
+        <label>Numero del cobrador
+          <input type="tel" id="datosCobradorTelefono" placeholder="Ej. 315 168 1249">
+        </label>
+        <button class="btn btn-primary" onclick="window.guardarDatosCobradorModal()" style="margin-top: 1rem;">Guardar Datos</button>
       </div>
     </div>
   </div>
@@ -1129,6 +1173,7 @@ try {
 let currentUser = null;
 let unsubscribeSnap = null;
 let ownerPanelUnsub = null;
+let profileSessionUnsub = null;
 let locationWatchId = null;
 let lastLocationWriteAt = 0;
 let locationRequiredForSession = false;
@@ -1136,11 +1181,14 @@ let lastKnownLocationAt = 0;
 let ownerMap = null;
 let ownerMapLayer = null;
 let ownerMapBounds = null;
+let perfilesUsuarios = {};
 const LOCATION_WRITE_THROTTLE_MS = 5000;
 const LOCATION_LIVE_WINDOW_MS = 90000;
 let chartInstance = null;
 let adminPin = '0000'; // PIN por defecto
 let targetAbonoIndex = null; // Para saber si borramos un cliente o un abono
+let currentUserProfile = {};
+let sessionStartedAtMs = 0;
 
 // Se declara isEditing en el ámbito global para que guardarBtn tenga acceso a él
 let isEditing = false;
@@ -1219,6 +1267,14 @@ let fechaEstadisticas = today();
 
 const LOGO_GRUPO_MEZA_FALLBACK = 'data:image/svg+xml,%3Csvg%20xmlns%3D%27http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%27%20viewBox%3D%270%200%20240%20240%27%3E%3Crect%20width%3D%27240%27%20height%3D%27240%27%20rx%3D%2734%27%20fill%3D%27%238a1538%27%2F%3E%3Cpath%20d%3D%27M38%20160V62h28l54%2072%2054-72h28v98h-28v-54l-46%2060h-16l-46-60v54H38z%27%20fill%3D%27white%27%20opacity%3D%27.96%27%2F%3E%3Ctext%20x%3D%27120%27%20y%3D%27202%27%20text-anchor%3D%27middle%27%20font-family%3D%27Arial%2C%20sans-serif%27%20font-size%3D%2725%27%20font-weight%3D%27800%27%20letter-spacing%3D%272%27%20fill%3D%27white%27%3EGRUPO%20MEZA%3C%2Ftext%3E%3C%2Fsvg%3E';
 const LOGO_GRUPO_MEZA = new URL('assets/grupo-meza-logo.jpg?v=logo-principal-20260627', window.location.href).href;
+const COBRADORES_CONOCIDOS = {
+  'ramonlopez@grupomeza.com': { nombre: 'Ramon Lopez', telefono: '3151681249' },
+  'edgarmeza@admin.com': { nombre: 'Edgar Meza', telefono: '' }
+};
+const COBRADORES_CONOCIDOS_UID = {
+  '8Bk0nmSvjndRI4bCzE52Ym0FGlD2': { email: 'ramonlopez@grupomeza.com', nombre: 'Ramon Lopez', telefono: '3151681249' },
+  'iJGgbTijlJbBDdkJ6Z9CaMpcIUu2': { email: 'edgarmeza@admin.com', nombre: 'Edgar Meza', telefono: '' }
+};
 
 function aplicarTamanoTicket(width = '58') {
   const normalized = width === '80' ? '80' : '58';
@@ -1245,9 +1301,60 @@ function escapeHTML(value) {
   }[char]));
 }
 
+function limpiarTelefono(value) {
+  return String(value ?? '').replace(/\D/g, '');
+}
+
+function obtenerPerfilCobrador(email = '', profile = {}) {
+  const normalizedEmail = String(email || '').trim().toLowerCase();
+  const conocido = COBRADORES_CONOCIDOS[normalizedEmail] || {};
+  const nombre = (profile.nombreCobrador || profile.nombre || profile.name || conocido.nombre || '').trim();
+  const telefono = limpiarTelefono(profile.telefonoCobrador || profile.telefono || profile.phone || conocido.telefono || '');
+  return { email: normalizedEmail, nombre, telefono };
+}
+
+function perfilCobradorActual() {
+  return obtenerPerfilCobrador(currentUser?.email || '', currentUserProfile || {});
+}
+
+function perfilCobradorPorUid(uid = '') {
+  const conocido = COBRADORES_CONOCIDOS_UID[String(uid || '')] || {};
+  const guardado = perfilesUsuarios[String(uid || '')] || {};
+  return obtenerPerfilCobrador(guardado.email || conocido.email || '', { ...conocido, ...guardado });
+}
+
+function perfilCobradorCuentaActiva() {
+  const perfilPorUid = perfilCobradorPorUid(getActiveUid());
+  if (perfilPorUid.nombre || perfilPorUid.telefono) return perfilPorUid;
+  if (!isObserving) return perfilCobradorActual();
+  return { email: '', nombre: '', telefono: '' };
+}
+
 function nombreCobradorPorDefecto() {
+  const perfil = perfilCobradorCuentaActiva();
+  if (perfil.nombre) return perfil.nombre;
   if (currentUser && currentUser.email) return currentUser.email;
   return 'Cobrador';
+}
+
+function detalleCobradorTicket(detalle = {}) {
+  const raw = String(detalle.cobrador || '').trim();
+  const sinCobrador = !raw || raw.toLowerCase() === 'no registrado' || raw === '-';
+  const fallback = perfilCobradorCuentaActiva();
+  const rawEmail = !sinCobrador && raw.includes('@') ? raw : '';
+  const email = String(rawEmail || detalle.cobradorEmail || (sinCobrador ? fallback.email : '')).trim().toLowerCase();
+  const perfil = obtenerPerfilCobrador(email, email && currentUser?.email?.toLowerCase() === email ? currentUserProfile : fallback);
+  const nombre = String((sinCobrador ? detalle.cobradorNombre : '') || (!sinCobrador && !raw.includes('@') ? raw : '') || perfil.nombre || (!sinCobrador ? raw : '') || 'No registrado').trim();
+  const nombreNormalizado = nombre.toLowerCase();
+  const nombreGuardadoNormalizado = String(detalle.cobradorNombre || '').trim().toLowerCase();
+  const puedeUsarTelefonoGuardado = sinCobrador || !nombreGuardadoNormalizado || nombreGuardadoNormalizado === nombreNormalizado;
+  const telefono = limpiarTelefono((puedeUsarTelefonoGuardado ? detalle.cobradorTelefono : '') || perfil.telefono || '');
+  return { nombre, telefono, email };
+}
+
+function textoCobradorTicket(detalle = {}) {
+  const cobrador = detalleCobradorTicket(detalle);
+  return cobrador.telefono ? `${cobrador.nombre} - Tel. ${cobrador.telefono}` : cobrador.nombre;
 }
 
 function generarFolioRecibo(cliente, fecha = today()) {
@@ -1704,7 +1811,7 @@ function detalleAbonoCliente(c, index) {
     ? Number(movimiento.saldoRestante)
     : Math.max(0, saldoAnterior - abonoRealizado);
 
-  return {
+  const detalle = {
     index,
     movimiento,
     fecha: movimiento.fecha || today(),
@@ -1713,8 +1820,12 @@ function detalleAbonoCliente(c, index) {
     saldoAnterior,
     saldoRestante,
     folioRecibo: movimiento.folioRecibo || `SIN-FOLIO-${String(index + 1).padStart(3, '0')}`,
-    cobrador: movimiento.cobrador || 'No registrado'
+    cobrador: movimiento.cobrador || 'No registrado',
+    cobradorNombre: movimiento.cobradorNombre || '',
+    cobradorTelefono: movimiento.cobradorTelefono || '',
+    cobradorEmail: movimiento.cobradorEmail || ''
   };
+  return { ...detalle, cobradorDisplay: textoCobradorTicket(detalle) };
 }
 
 function obtenerUltimoAbonoCliente(c) {
@@ -1742,10 +1853,12 @@ function generarTicketAbonoTexto(c, detalle, opciones = {}) {
   if (!detalle) return '';
   const { paraWhatsApp = false } = opciones;
   const bold = texto => paraWhatsApp ? `*${texto}*` : texto;
+  const cobrador = detalleCobradorTicket(detalle);
+  const telefonoCobrador = cobrador.telefono ? `\nTel. cobrador: ${cobrador.telefono}` : '';
   return `${bold('RECIBO DE ABONO - GRUPO MEZA')}
 Folio: ${detalle.folioRecibo}
 Fecha: ${formatDisplayDate(detalle.fecha)}
-Cobrador: ${detalle.cobrador}
+Cobrador: ${cobrador.nombre}${telefonoCobrador}
 
 Cliente: ${c.nombre}
 No. cliente: ${c.folio || 'N/A'}
@@ -1765,6 +1878,7 @@ function generarTicketAbonoHTML(c, detalle) {
     return `<div class="ticket"><div class="empty-state" style="padding:1rem;">No hay abonos registrados para generar un ticket.</div></div>`;
   }
 
+  const cobrador = detalleCobradorTicket(detalle);
   return `
     <div class="ticket receipt-ticket">
       <div class="receipt-head">
@@ -1777,7 +1891,7 @@ function generarTicketAbonoHTML(c, detalle) {
       <div class="receipt-meta">
         <div><span>Folio</span><strong>${escapeHTML(detalle.folioRecibo)}</strong></div>
         <div><span>Fecha</span><strong>${formatDisplayDate(detalle.fecha)}</strong></div>
-        <div><span>Cobrador</span><strong>${escapeHTML(detalle.cobrador)}</strong></div>
+        <div><span>Cobrador</span><strong>${escapeHTML(cobrador.nombre)}</strong>${cobrador.telefono ? `<small>No. cobrador: ${escapeHTML(cobrador.telefono)}</small>` : ''}</div>
         <div><span>No. cliente</span><strong>${escapeHTML(c.folio || 'N/A')}</strong></div>
       </div>
       <div class="receipt-client">
@@ -1806,7 +1920,7 @@ function generarDocumentoImpresionTicket(ticketHTML, width = ticketPaperWidth) {
   const paperWidth = ticketWidth === '80' ? '80mm' : '58mm';
   const contentWidth = ticketWidth === '80' ? '72mm' : '54mm';
   const fontSize = ticketWidth === '80' ? '12px' : '10px';
-  const logoSize = ticketWidth === '80' ? '42mm' : '30mm';
+  const logoSize = ticketWidth === '80' ? '30mm' : '22mm';
   const titleSize = ticketWidth === '80' ? '.95rem' : '.82rem';
 
   return `<!doctype html>
@@ -1843,6 +1957,7 @@ function generarDocumentoImpresionTicket(ticketHTML, width = ticketPaperWidth) {
     .receipt-meta { display: grid; grid-template-columns: ${ticketWidth === '80' ? '1fr 1fr' : '1fr'}; gap: ${ticketWidth === '80' ? '.4rem .75rem' : '1.2mm'}; margin-bottom: 2mm; font-size: .72rem; }
     .receipt-meta span, .receipt-row span { color: #4b5563; display: block; font-size: .62rem; text-transform: uppercase; font-family: "Segoe UI", Roboto, Arial, sans-serif; font-weight: 800; letter-spacing: .04em; }
     .receipt-meta strong, .receipt-row strong { font-weight: 900; color: #111827; }
+    .receipt-meta small { display: block; margin-top: .5mm; color: #4b5563; font-size: .65rem; font-family: "Segoe UI", Roboto, Arial, sans-serif; font-weight: 800; }
     .receipt-client { border: 1px solid #e5e7eb; border-radius: .3rem; padding: 1.8mm; margin-bottom: 2mm; font-family: "Segoe UI", Roboto, Arial, sans-serif; page-break-inside: avoid; }
     .receipt-client strong { display: block; font-size: ${ticketWidth === '80' ? '.95rem' : '.82rem'}; line-height: 1.15; }
     .receipt-table { width: 100%; border-collapse: collapse; margin: 2mm 0; font-family: "Segoe UI", Roboto, Arial, sans-serif; table-layout: fixed; }
@@ -2452,6 +2567,8 @@ function renderPanelDueno(snapshot, list) {
 
     visibleUsers += 1;
     const email = profile.email ? profile.email : 'Empleado (Sin Email)';
+    perfilesUsuarios[uid] = { ...profile, email };
+    const perfilEmpleado = obtenerPerfilCobrador(email, profile);
     const acceso = estadoAccesoUsuario(profile);
     const puedeGestionar = uid !== currentUser.uid;
     const ubicacionHTML = renderUbicacionEmpleado(data.location || {}, email);
@@ -2473,8 +2590,9 @@ function renderPanelDueno(snapshot, list) {
       <div class="info-box employee-card ${acceso.status === 'active' ? '' : 'disabled'}" onclick="window.verEmpleado('${uid}', '${jsString(email)}')">
         <span style="color: var(--color-primary); font-size: var(--text-sm); display:flex; align-items:center; gap:0.5rem; text-transform:none;">
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>
-          ${escapeHTML(email)} ${uid === currentUser.uid ? '<span style="font-weight:normal; color:var(--color-text-muted);">(Tú)</span>' : ''}
+          ${escapeHTML(perfilEmpleado.nombre || email)} ${uid === currentUser.uid ? '<span style="font-weight:normal; color:var(--color-text-muted);">(Tú)</span>' : ''}
         </span>
+        <div style="margin-top:.2rem; font-size:var(--text-xs); color:var(--color-text-muted); overflow-wrap:anywhere;">${escapeHTML(email)}${perfilEmpleado.telefono ? ` - Tel: ${escapeHTML(perfilEmpleado.telefono)}` : ''}</div>
         <div style="margin-top:.5rem;"><span class="badge ${acceso.class}">${acceso.label}</span></div>
         <div style="margin-top: 0.5rem; font-size: var(--text-xs); color: var(--color-text-muted);">
           <div>Clientes Registrados: <strong style="color:var(--color-text);">${totalClientes}</strong></div>
@@ -2485,6 +2603,8 @@ function renderPanelDueno(snapshot, list) {
         ${ubicacionHTML}
         <button class="btn btn-secondary" style="width: 100%; margin-top: 1rem; padding: 0.5rem; font-size: var(--text-xs); border: 1px solid var(--color-primary);">Inspeccionar Cuenta</button>
         <div class="employee-actions" onclick="event.stopPropagation()">
+          <button class="btn btn-secondary" onclick="window.abrirDatosTicketCobrador('${uid}', '${jsString(email)}')">Datos ticket</button>
+          <button class="btn btn-ghost" onclick="window.cerrarSesionEmpleado('${uid}', '${jsString(email)}')">Cerrar sesion</button>
           ${puedeGestionar ? `
             ${acceso.status === 'active'
               ? `<button class="btn btn-danger" onclick="window.cambiarAccesoUsuario('${uid}', 'suspended', '${jsString(email)}')">Suspender</button>`
@@ -2550,6 +2670,84 @@ window.salirModoObservador = () => {
   document.getElementById('observerBanner').style.display = 'none';
   listenClientes(currentUser.uid);
   showToast('Regresaste a tu propia cuenta.', 'success');
+};
+
+window.abrirDatosTicketCobrador = (uid, email = '') => {
+  if (!currentUser || currentUser.email !== 'edgarmeza@admin.com') {
+    return showToast('Solo el administrador puede editar datos de otros cobradores.', 'error');
+  }
+  const perfil = perfilCobradorPorUid(uid);
+  const emailFinal = email || perfil.email || '';
+  document.getElementById('datosCobradorUid').value = uid;
+  document.getElementById('datosCobradorEmail').value = emailFinal;
+  document.getElementById('datosCobradorNombre').value = perfil.nombre || '';
+  document.getElementById('datosCobradorTelefono').value = perfil.telefono || '';
+  document.getElementById('datosCobradorCuenta').textContent = emailFinal ? `Cuenta: ${emailFinal}` : 'Cuenta de cobrador';
+  document.getElementById('modalDatosCobrador').classList.add('active');
+};
+
+window.guardarDatosCobradorModal = async () => {
+  const uid = document.getElementById('datosCobradorUid').value;
+  const email = document.getElementById('datosCobradorEmail').value;
+  try {
+    await guardarPerfilCobrador(
+      uid,
+      email,
+      document.getElementById('datosCobradorNombre').value,
+      document.getElementById('datosCobradorTelefono').value
+    );
+    document.getElementById('modalDatosCobrador').classList.remove('active');
+    showToast('Datos de ticket actualizados.', 'success');
+    if (document.getElementById('modalDueno').classList.contains('active')) window.abrirPanelDueno();
+  } catch (e) {
+    showToast('No se pudieron actualizar los datos del cobrador.', 'error');
+  }
+};
+
+async function marcarCierreSesion(uid, email = '') {
+  if (!currentUser || currentUser.email !== 'edgarmeza@admin.com') {
+    return showToast('Solo el administrador puede cerrar sesiones.', 'error');
+  }
+  const profileRef = ref(db, `${dbRoot}/users/${uid}/profile`);
+  await update(profileRef, {
+    email,
+    forceLogoutAt: new Date().toISOString(),
+    forceLogoutBy: currentUser.email || ''
+  });
+}
+
+window.cerrarSesionEmpleado = async (uid, email = '') => {
+  if (!window.confirm(`Cerrar sesion de ${email || 'este empleado'} en todos sus dispositivos?\n\nTendra que volver a iniciar sesion y aceptar ubicacion.`)) return;
+  try {
+    await marcarCierreSesion(uid, email);
+    showToast(`Sesion cerrada para ${email || 'empleado'}.`, 'success');
+  } catch (e) {
+    showToast('No se pudo cerrar la sesion del empleado.', 'error');
+  }
+};
+
+window.cerrarSesionesTodos = async () => {
+  if (!currentUser || currentUser.email !== 'edgarmeza@admin.com') {
+    return showToast('Solo el administrador puede cerrar sesiones.', 'error');
+  }
+  if (!window.confirm('Cerrar sesion de todas las cuentas en todos los dispositivos?\n\nTodos tendran que volver a iniciar sesion.')) return;
+  try {
+    const usersSnap = await get(ref(db, `${dbRoot}/users`));
+    if (!usersSnap.exists()) return showToast('No hay cuentas para cerrar.', 'warning');
+    const updates = {};
+    const now = new Date().toISOString();
+    usersSnap.forEach(child => {
+      const data = child.val() || {};
+      const profile = data.profile || {};
+      if (profile.accountDeleted) return;
+      updates[`${child.key}/profile/forceLogoutAt`] = now;
+      updates[`${child.key}/profile/forceLogoutBy`] = currentUser.email || '';
+    });
+    await update(ref(db, `${dbRoot}/users`), updates);
+    showToast('Sesiones cerradas. Todos deberan iniciar sesion de nuevo.', 'success');
+  } catch (e) {
+    showToast('No se pudieron cerrar todas las sesiones.', 'error');
+  }
 };
 
 window.cambiarAccesoUsuario = async (uid, status, email = '') => {
@@ -3248,7 +3446,7 @@ function renderWorkspace() {
                   <td>${formatDisplayDate(m.fecha)}</td>
                   <td>${escapeHTML(m.concepto || 'Movimiento')}</td>
                   <td>${detalleAbono ? escapeHTML(detalleAbono.folioRecibo) : '-'}</td>
-                  <td>${detalleAbono ? escapeHTML(detalleAbono.cobrador) : '-'}</td>
+                  <td>${detalleAbono ? escapeHTML(detalleAbono.cobradorDisplay || detalleAbono.cobrador) : '-'}</td>
                   <td class="${monto < 0 ? 'text-success' : 'text-warning'}">${fmt.format(monto)}</td>
                   <td class="no-print" style="text-align: right; white-space: nowrap;">
                     ${detalleAbono ? `<button class="btn btn-ghost" style="padding: 0.3rem 0.5rem; border: none;" onclick="window.imprimirReciboHistorial('${index}')" title="Imprimir ticket de este abono">${ticketIconSVG}</button>` : ''}
@@ -3265,7 +3463,7 @@ function renderWorkspace() {
             const esAbono = monto < 0;
             const detalleAbono = esAbono ? detalleAbonoCliente(c, index) : null;
             const folio = detalleAbono ? detalleAbono.folioRecibo : '-';
-            const cobrador = detalleAbono ? detalleAbono.cobrador : '-';
+            const cobrador = detalleAbono ? (detalleAbono.cobradorDisplay || detalleAbono.cobrador) : '-';
             return `
               <div class="movement-card ${esAbono ? 'abono' : 'cargo'}">
                 <div class="movement-card-head">
@@ -3583,10 +3781,58 @@ document.getElementById('guardarBtn').onclick = async () => {
 };
 
 // --- Configuración y PIN ---
+async function guardarPerfilCobrador(uid, email, nombre, telefono) {
+  if (!currentUser || !uid) return showToast('Inicia sesion para guardar datos del cobrador.', 'warning');
+  const puedeEditar = uid === currentUser.uid || currentUser.email === 'edgarmeza@admin.com';
+  if (!puedeEditar) return showToast('No tienes permiso para editar estos datos.', 'error');
+
+  const nombreLimpio = String(nombre || '').trim();
+  const telefonoLimpio = limpiarTelefono(telefono);
+  if (!nombreLimpio) return showToast('Escribe el nombre que debe salir en el ticket.', 'warning');
+  if (!telefonoLimpio) return showToast('Escribe el numero del cobrador para que salga en el ticket.', 'warning');
+
+  const emailLimpio = String(email || currentUser.email || '').trim().toLowerCase();
+  const datos = {
+    email: emailLimpio,
+    nombre: nombreLimpio,
+    telefono: telefonoLimpio,
+    nombreCobrador: nombreLimpio,
+    telefonoCobrador: telefonoLimpio,
+    profileUpdatedAt: new Date().toISOString(),
+    profileUpdatedBy: currentUser.email || ''
+  };
+
+  const profileRef = ref(db, `${dbRoot}/users/${uid}/profile`);
+  await update(profileRef, datos);
+  perfilesUsuarios[uid] = { ...(perfilesUsuarios[uid] || {}), ...datos };
+  if (uid === currentUser.uid) currentUserProfile = { ...currentUserProfile, ...datos };
+  if (uid === getActiveUid()) renderWorkspace();
+}
+
 window.abrirConfiguracion = () => {
+  const perfil = perfilCobradorActual();
+  document.getElementById('nombreCobradorInput').value = perfil.nombre || '';
+  document.getElementById('telefonoCobradorInput').value = perfil.telefono || '';
   document.getElementById('pinActualInput').value = '';
   document.getElementById('nuevoPinInput').value = '';
+  const pinSection = document.getElementById('configPinSection');
+  if (pinSection) pinSection.style.display = currentUser?.email === 'edgarmeza@admin.com' ? 'block' : 'none';
   document.getElementById('modalConfiguracion').classList.add('active');
+};
+
+window.guardarDatosCobradorActual = async () => {
+  if (!currentUser) return;
+  try {
+    await guardarPerfilCobrador(
+      currentUser.uid,
+      currentUser.email,
+      document.getElementById('nombreCobradorInput').value,
+      document.getElementById('telefonoCobradorInput').value
+    );
+    showToast('Datos del cobrador guardados para los tickets.', 'success');
+  } catch (e) {
+    showToast('No se pudieron guardar los datos del cobrador.', 'error');
+  }
 };
 
 window.guardarNuevoPin = async () => {
@@ -3726,6 +3972,7 @@ window.registrarAbono = async () => {
   const monto = Number(document.getElementById('montoAbono').value || 0);
   const concepto = document.getElementById('conceptoAbono').value.trim() || 'Abono';
   const fechaSeleccionada = document.getElementById('fechaAbono').value || today();
+  const perfilCobrador = perfilCobradorCuentaActiva();
   const cobrador = (document.getElementById('cobradorAbono')?.value || '').trim() || nombreCobradorPorDefecto();
   
   if (monto <= 0) return showToast('Capture un monto mayor a 0.', 'warning'); 
@@ -3742,6 +3989,9 @@ window.registrarAbono = async () => {
     monto: -aplicado,
     folioRecibo,
     cobrador,
+    cobradorNombre: cobrador,
+    cobradorTelefono: perfilCobrador.telefono || '',
+    cobradorEmail: currentUser.email || '',
     saldoAnterior: saldo,
     saldoRestante,
     createdAt: new Date().toISOString()
@@ -4209,6 +4459,27 @@ themeBtn.onclick = () => {
   }
 };
 
+function vigilarCierreSesion(profileRef, uid, sessionStartMs) {
+  if (profileSessionUnsub) {
+    profileSessionUnsub();
+    profileSessionUnsub = null;
+  }
+  profileSessionUnsub = onValue(profileRef, async (snapshot) => {
+    const profile = snapshot.exists() ? snapshot.val() : {};
+    if (auth.currentUser?.uid !== uid) return;
+    currentUserProfile = { ...currentUserProfile, ...profile };
+    perfilesUsuarios[uid] = currentUserProfile;
+
+    const forceLogoutMs = profile.forceLogoutAt ? new Date(profile.forceLogoutAt).getTime() : 0;
+    if (forceLogoutMs && forceLogoutMs > sessionStartMs) {
+      locationRequiredForSession = false;
+      await detenerUbicacionCobrador(false, true);
+      showToast('Tu sesion fue cerrada por el administrador. Vuelve a iniciar sesion.', 'warning');
+      await signOut(auth);
+    }
+  });
+}
+
 // Vigilar estado de Autenticación
 if (auth) {
   onAuthStateChanged(auth, async (user) => {
@@ -4222,10 +4493,12 @@ if (auth) {
     if (user) {
       const profileRef = ref(db, `${dbRoot}/users/${user.uid}/profile`);
       let profile = {};
+      sessionStartedAtMs = Date.now();
 
       try {
         const profileSnap = await get(profileRef);
         profile = profileSnap.exists() ? profileSnap.val() : {};
+        currentUserProfile = profile || {};
       } catch (e) {
         showToast('No se pudo verificar tu acceso. Revisa la conexión.', 'error');
         await signOut(auth);
@@ -4260,7 +4533,7 @@ if (auth) {
         await detenerUbicacionCobrador(false, true);
       } else {
         if (ownerPanelBtn) ownerPanelBtn.style.display = 'none';
-        if (settingsBtn) settingsBtn.style.display = 'none';
+        if (settingsBtn) settingsBtn.style.display = 'inline-flex';
         if (locationShareBtn) locationShareBtn.style.display = 'inline-flex';
         locationRequiredForSession = true;
         actualizarBotonUbicacion();
@@ -4268,17 +4541,26 @@ if (auth) {
       }
       
       // Guardar el email del usuario recién conectado para que el Dueño pueda identificarlo en su panel
-      await update(profileRef, {
+      const perfilConocido = obtenerPerfilCobrador(user.email, profile);
+      const profileUpdate = {
         email: user.email,
         lastLogin: new Date().toISOString(),
         accessStatus: isMainAdmin ? 'active' : (profile.accessStatus || 'active')
-      });
+      };
+      if (perfilConocido.nombre && !profile.nombre) profileUpdate.nombre = perfilConocido.nombre;
+      if (perfilConocido.telefono && !profile.telefono) profileUpdate.telefono = perfilConocido.telefono;
+      await update(profileRef, profileUpdate);
+      currentUserProfile = { ...profile, ...profileUpdate };
+      perfilesUsuarios[user.uid] = currentUserProfile;
+      vigilarCierreSesion(profileRef, user.uid, sessionStartedAtMs);
       
       listenClientes(user.uid);
       if (!isMainAdmin) {
         setTimeout(() => iniciarUbicacionCobrador(false), 400);
       }
     } else {
+      currentUserProfile = {};
+      sessionStartedAtMs = 0;
       overlay.style.display = 'flex';
       userMenu.style.display = 'none';
       if (ownerPanelBtn) ownerPanelBtn.style.display = 'none';
@@ -4290,6 +4572,7 @@ if (auth) {
       setBloqueoUbicacionVisible(false);
       if (unsubscribeSnap) { unsubscribeSnap(); unsubscribeSnap = null; }
       if (ownerPanelUnsub) { ownerPanelUnsub(); ownerPanelUnsub = null; }
+      if (profileSessionUnsub) { profileSessionUnsub(); profileSessionUnsub = null; }
       if (locationWatchId !== null && navigator.geolocation) {
         navigator.geolocation.clearWatch(locationWatchId);
         locationWatchId = null;
