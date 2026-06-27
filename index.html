@@ -13,6 +13,8 @@
   <link rel="icon" href="data:image/svg+xml,%3Csvg%20xmlns%3D%27http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%27%20viewBox%3D%270%200%2064%2064%27%3E%3Crect%20width%3D%2764%27%20height%3D%2764%27%20rx%3D%2712%27%20fill%3D%27%238a1538%27%2F%3E%3Ctext%20x%3D%2732%27%20y%3D%2740%27%20text-anchor%3D%27middle%27%20font-family%3D%27Arial%27%20font-size%3D%2724%27%20font-weight%3D%27700%27%20fill%3D%27white%27%3EGM%3C%2Ftext%3E%3C%2Fsvg%3E">
   <link rel="apple-touch-icon" href="data:image/svg+xml,%3Csvg%20xmlns%3D%27http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%27%20viewBox%3D%270%200%20240%20240%27%3E%3Crect%20width%3D%27240%27%20height%3D%27240%27%20rx%3D%2734%27%20fill%3D%27%238a1538%27%2F%3E%3Cpath%20d%3D%27M38%20160V62h28l54%2072%2054-72h28v98h-28v-54l-46%2060h-16l-46-60v54H38z%27%20fill%3D%27white%27%20opacity%3D%27.96%27%2F%3E%3Ctext%20x%3D%27120%27%20y%3D%27202%27%20text-anchor%3D%27middle%27%20font-family%3D%27Arial%2C%20sans-serif%27%20font-size%3D%2725%27%20font-weight%3D%27800%27%20letter-spacing%3D%272%27%20fill%3D%27white%27%3EGRUPO%20MEZA%3C%2Ftext%3E%3C%2Fsvg%3E">
   <!-- Chart.js para Gráficas Profesionales -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.css">
+  <script src="https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <style>
     :root, [data-theme="light"] {
@@ -376,6 +378,44 @@
     .employee-card.disabled { opacity: .78; border-style: dashed; }
     .employee-actions { display: grid; grid-template-columns: 1fr 1fr; gap: .5rem; margin-top: 1rem; }
     .employee-actions .btn { padding: .55rem .65rem; font-size: var(--text-xs); }
+    .employee-location { margin-top: .75rem; border: 1px solid var(--color-border); border-radius: var(--radius-md); background: var(--color-surface-2); padding: .75rem; display: grid; gap: .45rem; }
+    .employee-location.live { border-color: var(--color-success); background: var(--color-success-bg); }
+    .employee-location.stale { border-color: var(--color-warning); background: var(--color-warning-bg); }
+    .employee-location-head { display: flex; align-items: center; justify-content: space-between; gap: .5rem; }
+    .employee-location-title { display: flex; align-items: center; gap: .35rem; font-weight: 900; font-size: var(--text-xs); color: var(--color-text); }
+    .employee-location p { margin: 0; font-size: var(--text-xs); color: var(--color-text-muted); overflow-wrap: anywhere; }
+    .employee-location-actions { display: grid; grid-template-columns: 1fr 1fr; gap: .45rem; }
+    .employee-location-actions .btn { min-height: 36px; padding: .45rem .55rem; font-size: var(--text-xs); }
+    .owner-map-shell { margin-top: 1rem; border: 1px solid var(--color-border); border-radius: var(--radius-lg); overflow: hidden; background: var(--color-surface); box-shadow: var(--shadow-sm); }
+    .owner-map-head { display: flex; align-items: center; justify-content: space-between; gap: .75rem; padding: .85rem 1rem; border-bottom: 1px solid var(--color-border); background: var(--color-surface-2); }
+    .owner-map-head h3 { margin: 0; font-size: var(--text-base); color: var(--color-text); display: flex; align-items: center; gap: .45rem; }
+    .owner-map-head small { display: block; color: var(--color-text-muted); font-weight: 800; margin-top: .15rem; }
+    .owner-live-map { height: 380px; min-height: 320px; width: 100%; background: #eef2f7; z-index: 0; }
+    .owner-live-map.empty { display: grid; place-items: center; padding: 1rem; color: var(--color-text-muted); font-weight: 900; text-align: center; }
+    .owner-map-list { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: .6rem; padding: .75rem; border-top: 1px solid var(--color-border); background: var(--color-surface); }
+    .owner-map-pill { min-width: 0; border: 1px solid var(--color-border); border-radius: var(--radius-md); padding: .6rem; background: var(--color-surface-2); display: grid; gap: .2rem; }
+    .owner-map-pill.live { border-color: var(--color-success); background: var(--color-success-bg); }
+    .owner-map-pill.stale { border-color: var(--color-warning); background: var(--color-warning-bg); }
+    .owner-map-pill strong { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: var(--text-xs); }
+    .owner-map-pill span { color: var(--color-text-muted); font-size: .68rem; font-weight: 800; }
+    .delivery-driver-marker { width: 34px; height: 34px; border-radius: 999px; display: grid; place-items: center; color: #fff; background: var(--color-primary); border: 3px solid #fff; box-shadow: 0 8px 18px rgba(0,0,0,.25); font-weight: 900; }
+    .delivery-driver-marker.live { background: var(--color-success); animation: locationPulse 1.4s infinite; }
+    .delivery-driver-marker.stale { background: var(--color-warning); }
+    .delivery-driver-marker.offline { background: var(--color-text-muted); }
+    .leaflet-container { font-family: var(--font-body); }
+    .leaflet-popup-content { margin: .65rem .8rem; min-width: 180px; }
+    .leaflet-popup-content strong { color: var(--color-text); }
+    .location-required-overlay { position: fixed; inset: 0; z-index: 2400; display: none; align-items: center; justify-content: center; padding: 1rem; background: rgba(10, 10, 12, .72); backdrop-filter: blur(6px); }
+    .location-required-card { width: min(440px, 100%); border-radius: var(--radius-lg); background: var(--color-surface); color: var(--color-text); border: 1px solid var(--color-border); box-shadow: var(--shadow-lg); padding: 1.2rem; display: grid; gap: .9rem; text-align: center; }
+    .location-required-icon { width: 54px; height: 54px; border-radius: 50%; margin: 0 auto; display: grid; place-items: center; color: #fff; background: var(--color-primary); box-shadow: var(--shadow-md); }
+    .location-required-card h2 { margin: 0; color: var(--color-text); font-size: var(--text-lg); }
+    .location-required-card p { margin: 0; color: var(--color-text-muted); line-height: 1.45; }
+    .location-required-status { border-radius: var(--radius-md); border: 1px solid var(--color-border); background: var(--color-surface-2); padding: .65rem; font-size: var(--text-xs); font-weight: 800; color: var(--color-text-muted); }
+    @keyframes locationPulse {
+      0% { box-shadow: 0 0 0 0 rgba(15, 118, 110, .45), 0 8px 18px rgba(0,0,0,.25); }
+      70% { box-shadow: 0 0 0 12px rgba(15, 118, 110, 0), 0 8px 18px rgba(0,0,0,.25); }
+      100% { box-shadow: 0 0 0 0 rgba(15, 118, 110, 0), 0 8px 18px rgba(0,0,0,.25); }
+    }
     .collector-list { display: grid; gap: .5rem; }
     .collector-row { display: flex; justify-content: space-between; gap: 1rem; border: 1px solid var(--color-border); border-radius: var(--radius-md); padding: .65rem .75rem; align-items: center; }
     .collector-row span { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-weight: 800; }
@@ -597,6 +637,11 @@
       .palette-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
       .palette-option { min-height: 92px; }
       .employee-actions { grid-template-columns: 1fr; }
+      .employee-location-actions { grid-template-columns: 1fr; }
+      .owner-map-head { align-items: flex-start; flex-direction: column; padding: .75rem; }
+      .owner-live-map { height: 320px; min-height: 280px; }
+      .owner-map-list { grid-template-columns: 1fr; }
+      .location-required-card { padding: 1rem; }
       .collector-row { align-items: flex-start; flex-direction: column; gap: .25rem; }
       .collector-row span { white-space: normal; }
       .corte-detail-table { display: none; }
@@ -683,8 +728,7 @@
     <div class="auth-card">
       <div style="text-align: center; margin-bottom: 1.5rem; display: flex; flex-direction: column; align-items: center;">
         <div class="logo-container" style="width: 80px; height: 80px; margin-bottom: 1rem; border-radius: 20px;">
-          <img src="https://i.imgur.com/WT1vVH2.jpeg" alt="Logo Grupo Meza" onerror="this.style.display='none'; this.nextElementSibling.style.display='block';">
-          <svg style="display:none; width:40px; height:40px; color:var(--color-primary);" viewBox="0 0 64 64" aria-hidden="true"><rect width="64" height="64" rx="14" fill="currentColor"></rect><text x="32" y="39" text-anchor="middle" font-family="Arial, sans-serif" font-size="22" font-weight="900" fill="#fff">GM</text></svg>
+          <svg style="width:40px; height:40px; color:var(--color-primary);" viewBox="0 0 64 64" aria-hidden="true"><rect width="64" height="64" rx="14" fill="currentColor"></rect><text x="32" y="39" text-anchor="middle" font-family="Arial, sans-serif" font-size="22" font-weight="900" fill="#fff">GM</text></svg>
         </div>
         <h2>GRUPO MEZA</h2>
       </div>
@@ -703,6 +747,18 @@
     </div>
   </div>
 
+  <div id="locationRequiredOverlay" class="location-required-overlay">
+    <div class="location-required-card">
+      <div class="location-required-icon">
+        <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M12 21s7-4.35 7-11a7 7 0 1 0-14 0c0 6.65 7 11 7 11z"></path><circle cx="12" cy="10" r="2.5"></circle></svg>
+      </div>
+      <h2>Ubicación en vivo requerida</h2>
+      <p>Para usar la app como cobrador debes compartir tu ubicación con el Panel Dueño durante la jornada.</p>
+      <button class="btn btn-primary" id="forceLocationBtn" onclick="window.activarUbicacionObligatoria()" style="width:100%;">Activar ubicación</button>
+      <div id="locationRequiredStatus" class="location-required-status">Presiona activar y acepta el permiso de ubicación del celular.</div>
+    </div>
+  </div>
+
   <!-- APLICACIÓN PRINCIPAL -->
   <div class="app">
     
@@ -710,8 +766,7 @@
     <header class="topbar">
       <div class="brand">
         <div class="logo-container">
-          <img src="https://i.imgur.com/WT1vVH2.jpeg" alt="Logo Grupo Meza" onerror="this.style.display='none'; this.nextElementSibling.style.display='block';">
-          <svg style="display:none; width:24px; height:24px; color:var(--color-primary);" viewBox="0 0 64 64" aria-hidden="true"><rect width="64" height="64" rx="14" fill="currentColor"></rect><text x="32" y="39" text-anchor="middle" font-family="Arial, sans-serif" font-size="22" font-weight="900" fill="#fff">GM</text></svg>
+          <svg style="width:24px; height:24px; color:var(--color-primary);" viewBox="0 0 64 64" aria-hidden="true"><rect width="64" height="64" rx="14" fill="currentColor"></rect><text x="32" y="39" text-anchor="middle" font-family="Arial, sans-serif" font-size="22" font-weight="900" fill="#fff">GM</text></svg>
         </div>
         <div class="brand-text" style="cursor: pointer;" onclick="window.irAlDashboard()" title="Ir al Dashboard">
           <h1>GRUPO MEZA</h1>
@@ -753,6 +808,9 @@
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>
             <span id="userEmailDisplay">usuario@correo</span>
           </div>
+          <button class="btn btn-ghost" id="locationShareBtn" onclick="window.toggleUbicacionCobrador()" title="Compartir ubicacion con el administrador" style="padding: 0.5rem; display: none;">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 21s7-4.35 7-11a7 7 0 1 0-14 0c0 6.65 7 11 7 11z"></path><circle cx="12" cy="10" r="2.5"></circle></svg>
+          </button>
           <button class="btn btn-ghost" id="settingsBtn" onclick="window.abrirConfiguracion()" title="Configuración de Seguridad" style="padding: 0.5rem; display: none;">
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>
           </button>
@@ -858,15 +916,30 @@
 
   <!-- MODAL: PANEL DUEÑO (Ver empleados) -->
   <div id="modalDueno" class="modal-overlay">
-    <div class="modal-content" style="max-width: 850px;">
+    <div class="modal-content" style="max-width: 1150px;">
       <div class="modal-header">
         <h2 style="display:flex; align-items:center; gap:0.5rem; color:var(--color-owner);">
           <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg>
           Panel de Dueño - Cuentas de Empleados
         </h2>
-        <button class="close-btn" onclick="document.getElementById('modalDueno').classList.remove('active')">&times;</button>
+        <button class="close-btn" onclick="window.cerrarPanelDueno()">&times;</button>
       </div>
       <p class="muted" style="margin-top:0;">Selecciona el perfil de cualquier empleado para entrar a su cuenta en modo observador, ver sus estadísticas detalladas y corregir errores si es necesario. También puedes suspender, reactivar, quitar acceso sin borrar cartera o borrar la cuenta del empleado dentro de la app.</p>
+
+      <div class="owner-map-shell">
+        <div class="owner-map-head">
+          <div>
+            <h3>
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 21s7-4.35 7-11a7 7 0 1 0-14 0c0 6.65 7 11 7 11z"></path><circle cx="12" cy="10" r="2.5"></circle></svg>
+              Mapa en vivo de cobradores
+            </h3>
+            <small id="ownerMapStatus">Esperando ubicaciones activas...</small>
+          </div>
+          <button class="btn btn-secondary" onclick="window.centrarMapaCobradores()" title="Centrar mapa con cobradores activos">Centrar mapa</button>
+        </div>
+        <div id="ownerLiveMap" class="owner-live-map empty">Sin ubicaciones activas por el momento.</div>
+        <div id="ownerMapList" class="owner-map-list"></div>
+      </div>
       
       <div id="listaEmpleados" class="grid-form two" style="margin-top: 1.5rem;">
         <!-- Empleados inyectados por JS -->
@@ -1054,6 +1127,16 @@ try {
 
 let currentUser = null;
 let unsubscribeSnap = null;
+let ownerPanelUnsub = null;
+let locationWatchId = null;
+let lastLocationWriteAt = 0;
+let locationRequiredForSession = false;
+let lastKnownLocationAt = 0;
+let ownerMap = null;
+let ownerMapLayer = null;
+let ownerMapBounds = null;
+const LOCATION_WRITE_THROTTLE_MS = 5000;
+const LOCATION_LIVE_WINDOW_MS = 90000;
 let chartInstance = null;
 let adminPin = '0000'; // PIN por defecto
 let targetAbonoIndex = null; // Para saber si borramos un cliente o un abono
@@ -1082,7 +1165,10 @@ document.getElementById('registerBtn').onclick = async () => {
   catch (error) { showToast(error.code === 'auth/email-already-in-use' ? 'El correo ya existe.' : 'Error al crear cuenta.', 'error'); }
 };
 
-document.getElementById('logoutBtn').onclick = () => { signOut(auth).then(() => showToast('Sesión cerrada.', 'success')); };
+document.getElementById('logoutBtn').onclick = async () => {
+  await detenerUbicacionCobrador(false, true);
+  signOut(auth).then(() => showToast('Sesión cerrada.', 'success'));
+};
 
 const initAuth = async () => {
   if (!auth) return;
@@ -1130,8 +1216,8 @@ let vistaPrincipal = 'dashboard';
 let periodoEstadisticas = localStorage.getItem('grupoMezaPeriodoEstadisticas') || 'day';
 let fechaEstadisticas = today();
 
-const LOGO_GRUPO_MEZA = 'https://i.imgur.com/WT1vVH2.jpeg';
 const LOGO_GRUPO_MEZA_FALLBACK = 'data:image/svg+xml,%3Csvg%20xmlns%3D%27http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%27%20viewBox%3D%270%200%20240%20240%27%3E%3Crect%20width%3D%27240%27%20height%3D%27240%27%20rx%3D%2734%27%20fill%3D%27%238a1538%27%2F%3E%3Cpath%20d%3D%27M38%20160V62h28l54%2072%2054-72h28v98h-28v-54l-46%2060h-16l-46-60v54H38z%27%20fill%3D%27white%27%20opacity%3D%27.96%27%2F%3E%3Ctext%20x%3D%27120%27%20y%3D%27202%27%20text-anchor%3D%27middle%27%20font-family%3D%27Arial%2C%20sans-serif%27%20font-size%3D%2725%27%20font-weight%3D%27800%27%20letter-spacing%3D%272%27%20fill%3D%27white%27%3EGRUPO%20MEZA%3C%2Ftext%3E%3C%2Fsvg%3E';
+const LOGO_GRUPO_MEZA = LOGO_GRUPO_MEZA_FALLBACK;
 
 function aplicarTamanoTicket(width = '58') {
   const normalized = width === '80' ? '80' : '58';
@@ -1927,7 +2013,502 @@ function jsString(value) {
   return String(value ?? '').replace(/\\/g, '\\\\').replace(/'/g, "\\'").replace(/\r?\n/g, ' ');
 }
 
+function formatDateTimeDisplay(iso) {
+  if (!iso) return 'Sin registro';
+  const date = new Date(iso);
+  if (Number.isNaN(date.getTime())) return 'Sin registro';
+  return date.toLocaleString('es-MX', { dateStyle: 'short', timeStyle: 'short' });
+}
+
+function tiempoDesdeISO(iso) {
+  if (!iso) return 'sin ubicacion';
+  const date = new Date(iso);
+  if (Number.isNaN(date.getTime())) return 'sin ubicacion';
+  const diffMs = Date.now() - date.getTime();
+  const min = Math.max(0, Math.floor(diffMs / 60000));
+  if (min < 1) return 'hace menos de 1 min';
+  if (min < 60) return `hace ${min} min`;
+  const hrs = Math.floor(min / 60);
+  if (hrs < 24) return `hace ${hrs} h`;
+  const dias = Math.floor(hrs / 24);
+  return `hace ${dias} dia${dias === 1 ? '' : 's'}`;
+}
+
+function ubicacionReciente(location = {}) {
+  if (!location.updatedAt) return false;
+  const updated = new Date(location.updatedAt).getTime();
+  if (!Number.isFinite(updated)) return false;
+  return Date.now() - updated <= LOCATION_LIVE_WINDOW_MS;
+}
+
+function mapaUrl(lat, lng) {
+  return `https://www.google.com/maps?q=${encodeURIComponent(`${lat},${lng}`)}`;
+}
+
+function esAdminPrincipal() {
+  return currentUser?.email === 'edgarmeza@admin.com';
+}
+
+function estadoUbicacion(location = {}) {
+  const lat = Number(location.lat);
+  const lng = Number(location.lng);
+  const hasCoords = Number.isFinite(lat) && Number.isFinite(lng);
+  const live = hasCoords && location.sharing === true && ubicacionReciente(location);
+  return {
+    lat,
+    lng,
+    hasCoords,
+    live,
+    stateClass: live ? 'live' : (hasCoords ? 'stale' : ''),
+    badgeClass: live ? 'badge-paid' : (hasCoords ? 'badge-active' : 'badge-access-deleted'),
+    label: live ? 'En vivo' : (hasCoords ? 'Ultima señal' : 'Sin ubicacion')
+  };
+}
+
+function setBloqueoUbicacionVisible(visible, message = '') {
+  const overlay = document.getElementById('locationRequiredOverlay');
+  const status = document.getElementById('locationRequiredStatus');
+  if (!overlay) return;
+  overlay.style.display = visible ? 'flex' : 'none';
+  if (status && message) status.textContent = message;
+}
+
+function evaluarBloqueoUbicacion() {
+  if (!currentUser || esAdminPrincipal() || !locationRequiredForSession) {
+    setBloqueoUbicacionVisible(false);
+    return;
+  }
+  const liveLocal = locationWatchId !== null && lastKnownLocationAt && (Date.now() - lastKnownLocationAt <= LOCATION_LIVE_WINDOW_MS);
+  if (liveLocal) {
+    setBloqueoUbicacionVisible(false);
+  } else {
+    setBloqueoUbicacionVisible(true, locationWatchId === null
+      ? 'Activa la ubicacion para continuar usando la app.'
+      : 'Esperando una señal reciente del GPS...');
+  }
+}
+
+function renderUbicacionEmpleado(location = {}, email = '') {
+  const { lat, lng, hasCoords, stateClass, badgeClass, label } = estadoUbicacion(location);
+  const accuracy = Number.isFinite(Number(location.accuracy)) ? ` · Precision ${Math.round(Number(location.accuracy))} m` : '';
+  const speed = Number.isFinite(Number(location.speed)) && Number(location.speed) > 0 ? ` · ${Math.round(Number(location.speed) * 3.6)} km/h` : '';
+  const coords = hasCoords ? `${lat.toFixed(5)}, ${lng.toFixed(5)}` : 'El cobrador aun no comparte ubicacion.';
+  const mapLink = hasCoords ? mapaUrl(lat, lng) : '';
+
+  return `
+    <div class="employee-location ${stateClass}">
+      <div class="employee-location-head">
+        <div class="employee-location-title">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 21s7-4.35 7-11a7 7 0 1 0-14 0c0 6.65 7 11 7 11z"></path><circle cx="12" cy="10" r="2.5"></circle></svg>
+          Ubicacion
+        </div>
+        <span class="badge ${badgeClass}">${label}</span>
+      </div>
+      <p><strong style="color:var(--color-text);">${escapeHTML(tiempoDesdeISO(location.updatedAt))}</strong>${accuracy}${speed}</p>
+      <p>${escapeHTML(coords)}</p>
+      ${hasCoords ? `
+        <div class="employee-location-actions" onclick="event.stopPropagation()">
+          <a class="btn btn-secondary" href="${mapLink}" target="_blank" rel="noopener" onclick="event.stopPropagation()">Abrir mapa</a>
+          <button class="btn btn-ghost" onclick="event.stopPropagation(); window.copiarUbicacionEmpleado('${lat}', '${lng}', '${jsString(email)}')">Copiar</button>
+        </div>
+      ` : ''}
+    </div>
+  `;
+}
+
+function actualizarBotonUbicacion() {
+  const btn = document.getElementById('locationShareBtn');
+  if (!btn) return;
+  const active = locationWatchId !== null;
+  btn.classList.toggle('btn-primary', active);
+  btn.classList.toggle('btn-ghost', !active);
+  btn.title = active ? 'Ubicacion en vivo obligatoria activa' : 'Activar ubicacion obligatoria';
+  btn.innerHTML = active
+    ? '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 21s7-4.35 7-11a7 7 0 1 0-14 0c0 6.65 7 11 7 11z"></path><circle cx="12" cy="10" r="2.5"></circle></svg><span class="mobile-only">En vivo</span>'
+    : '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 21s7-4.35 7-11a7 7 0 1 0-14 0c0 6.65 7 11 7 11z"></path><circle cx="12" cy="10" r="2.5"></circle></svg><span class="mobile-only">Ubicacion</span>';
+}
+
+async function guardarUbicacionCobrador(position) {
+  if (!currentUser || !db) return;
+  const nowMs = Date.now();
+  lastKnownLocationAt = nowMs;
+  localStorage.setItem('grupoMezaUbicacionActiva', 'true');
+  actualizarBotonUbicacion();
+  evaluarBloqueoUbicacion();
+  if (nowMs - lastLocationWriteAt < LOCATION_WRITE_THROTTLE_MS) return;
+  lastLocationWriteAt = nowMs;
+  const { latitude, longitude, accuracy, heading, speed } = position.coords;
+  await update(ref(db, `${dbRoot}/users/${currentUser.uid}/location`), {
+    lat: latitude,
+    lng: longitude,
+    accuracy: Number.isFinite(accuracy) ? accuracy : null,
+    heading: Number.isFinite(heading) ? heading : null,
+    speed: Number.isFinite(speed) ? speed : null,
+    sharing: true,
+    updatedAt: new Date(nowMs).toISOString(),
+    email: currentUser.email || ''
+  });
+}
+
+function iniciarUbicacionCobrador(mostrarToast = true) {
+  if (!currentUser) return showToast('Inicia sesion para compartir ubicacion.', 'warning');
+  if (!navigator.geolocation) return showToast('Este dispositivo no permite obtener ubicacion.', 'error');
+  if (!window.isSecureContext && location.protocol !== 'file:') {
+    setBloqueoUbicacionVisible(true, 'La ubicacion en vivo necesita HTTPS. Publicala o usala desde GitHub Pages.');
+    return showToast('La ubicacion en vivo requiere HTTPS. Usala desde GitHub Pages.', 'warning');
+  }
+  if (locationWatchId !== null) {
+    evaluarBloqueoUbicacion();
+    return;
+  }
+  if (!esAdminPrincipal()) {
+    locationRequiredForSession = true;
+    setBloqueoUbicacionVisible(true, 'Acepta el permiso de ubicacion para continuar.');
+  }
+
+  locationWatchId = navigator.geolocation.watchPosition(
+    async (position) => {
+      try {
+        await guardarUbicacionCobrador(position);
+      } catch (e) {
+        showToast('No se pudo guardar la ubicacion.', 'error');
+      }
+    },
+    (error) => {
+      if (locationWatchId !== null && navigator.geolocation) navigator.geolocation.clearWatch(locationWatchId);
+      locationWatchId = null;
+      localStorage.setItem('grupoMezaUbicacionActiva', 'false');
+      actualizarBotonUbicacion();
+      evaluarBloqueoUbicacion();
+      const msg = error.code === 1
+        ? 'Permiso de ubicacion denegado.'
+        : 'No se pudo obtener la ubicacion del dispositivo.';
+      setBloqueoUbicacionVisible(true, `${msg} Activa el permiso de ubicacion para continuar.`);
+      showToast(msg, 'error');
+    },
+    { enableHighAccuracy: true, maximumAge: 5000, timeout: 12000 }
+  );
+
+  actualizarBotonUbicacion();
+  evaluarBloqueoUbicacion();
+  if (mostrarToast) showToast('Ubicacion en vivo activada para el administrador.', 'success');
+}
+
+async function detenerUbicacionCobrador(mostrarToast = true, forzar = false) {
+  if (!forzar && currentUser && !esAdminPrincipal()) {
+    showToast('La ubicacion en vivo es obligatoria para cobradores.', 'warning');
+    iniciarUbicacionCobrador(false);
+    evaluarBloqueoUbicacion();
+    return;
+  }
+  if (locationWatchId !== null && navigator.geolocation) {
+    navigator.geolocation.clearWatch(locationWatchId);
+  }
+  locationWatchId = null;
+  localStorage.setItem('grupoMezaUbicacionActiva', 'false');
+  lastKnownLocationAt = 0;
+  actualizarBotonUbicacion();
+  if (forzar) setBloqueoUbicacionVisible(false);
+
+  if (currentUser && db) {
+    try {
+      await update(ref(db, `${dbRoot}/users/${currentUser.uid}/location`), {
+        sharing: false,
+        stoppedAt: new Date().toISOString(),
+        email: currentUser.email || ''
+      });
+    } catch (e) {}
+  }
+  if (mostrarToast) showToast('Ubicacion en vivo detenida.', 'success');
+}
+
+window.toggleUbicacionCobrador = () => {
+  if (locationWatchId !== null) {
+    showToast('La ubicacion en vivo es obligatoria y no se puede apagar desde la cuenta del cobrador.', 'warning');
+    evaluarBloqueoUbicacion();
+  } else {
+    iniciarUbicacionCobrador(true);
+  }
+};
+
+window.activarUbicacionObligatoria = () => {
+  locationRequiredForSession = true;
+  setBloqueoUbicacionVisible(true, 'Solicitando permiso de ubicacion...');
+  iniciarUbicacionCobrador(true);
+};
+
+window.copiarUbicacionEmpleado = async (lat, lng, email = '') => {
+  const text = `${email ? email + ' - ' : ''}${lat}, ${lng}\n${mapaUrl(lat, lng)}`;
+  try {
+    await navigator.clipboard.writeText(text);
+    showToast('Ubicacion copiada.', 'success');
+  } catch (e) {
+    window.prompt('Copia la ubicacion:', text);
+  }
+};
+
+function obtenerCobradoresParaMapa(snapshot) {
+  const cobradores = [];
+  if (!snapshot.exists()) return cobradores;
+  snapshot.forEach(child => {
+    const uid = child.key;
+    const data = child.val() || {};
+    const profile = data.profile || {};
+    if (profile.accountDeleted) return;
+    const email = profile.email || 'Empleado (Sin Email)';
+    if (email === 'edgarmeza@admin.com') return;
+    const location = data.location || {};
+    const state = estadoUbicacion(location);
+    cobradores.push({ uid, email, location, ...state });
+  });
+  return cobradores;
+}
+
+function cargarLeafletSiHaceFalta() {
+  if (window.L) return Promise.resolve(true);
+  if (window.leafletLoadPromise) return window.leafletLoadPromise;
+
+  window.leafletLoadPromise = new Promise((resolve) => {
+    if (!document.querySelector('link[data-leaflet-dynamic]')) {
+      const css = document.createElement('link');
+      css.rel = 'stylesheet';
+      css.href = 'https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.css';
+      css.dataset.leafletDynamic = 'true';
+      document.head.appendChild(css);
+    }
+
+    const cargarScript = (src, fallback = null) => {
+      const script = document.createElement('script');
+      script.src = src;
+      script.async = true;
+      script.onload = () => resolve(!!window.L);
+      script.onerror = () => fallback ? cargarScript(fallback) : resolve(false);
+      document.head.appendChild(script);
+    };
+
+    cargarScript(
+      'https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.js',
+      'https://unpkg.com/leaflet@1.9.4/dist/leaflet.js'
+    );
+  });
+
+  return window.leafletLoadPromise;
+}
+
+function inicializarMapaCobradores() {
+  const mapEl = document.getElementById('ownerLiveMap');
+  if (!mapEl || !window.L) return false;
+  mapEl.classList.remove('empty');
+  if (!ownerMap) mapEl.textContent = '';
+  if (ownerMap) {
+    setTimeout(() => ownerMap.invalidateSize(), 120);
+    return true;
+  }
+  ownerMap = L.map(mapEl, { zoomControl: true, attributionControl: true });
+  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    maxZoom: 19,
+    attribution: '&copy; OpenStreetMap'
+  }).addTo(ownerMap);
+  ownerMapLayer = L.layerGroup().addTo(ownerMap);
+  ownerMap.setView([20.6597, -103.3496], 12);
+  setTimeout(() => ownerMap.invalidateSize(), 180);
+  return true;
+}
+
+function markerInicial(email = '') {
+  const clean = String(email || '?').trim();
+  return (clean[0] || '?').toUpperCase();
+}
+
+function renderMapaCobradores(snapshot) {
+  const mapEl = document.getElementById('ownerLiveMap');
+  const statusEl = document.getElementById('ownerMapStatus');
+  const listEl = document.getElementById('ownerMapList');
+  if (!mapEl || !statusEl || !listEl) return;
+
+  const cobradores = obtenerCobradoresParaMapa(snapshot);
+  const conCoords = cobradores.filter(c => c.hasCoords);
+  const liveCount = conCoords.filter(c => c.live).length;
+  statusEl.textContent = conCoords.length
+    ? `${liveCount} en vivo · ${conCoords.length} con ultima señal`
+    : 'Esperando que los cobradores activen ubicacion.';
+
+  listEl.innerHTML = cobradores.length
+    ? cobradores.map(c => `
+      <div class="owner-map-pill ${c.stateClass}">
+        <strong>${escapeHTML(c.email)}</strong>
+        <span>${escapeHTML(c.label)} · ${escapeHTML(tiempoDesdeISO(c.location.updatedAt))}${Number.isFinite(Number(c.location.accuracy)) ? ` · ${Math.round(Number(c.location.accuracy))} m` : ''}</span>
+      </div>
+    `).join('')
+    : '<div class="owner-map-pill"><strong>Sin cobradores activos</strong><span>No hay empleados para mostrar.</span></div>';
+
+  if (!conCoords.length) {
+    if (ownerMapLayer) ownerMapLayer.clearLayers();
+    ownerMapBounds = null;
+
+    if (!window.L) {
+      mapEl.classList.add('empty');
+      mapEl.textContent = 'Cargando mapa en vivo...';
+      cargarLeafletSiHaceFalta().then(ok => {
+        if (ok && document.getElementById('modalDueno')?.classList.contains('active')) {
+          renderMapaCobradores(snapshot);
+        } else if (!ok) {
+          mapEl.textContent = 'Mapa no disponible. Esperando ubicaciones activas.';
+        }
+      });
+      return;
+    }
+
+    if (inicializarMapaCobradores()) {
+      ownerMap.setView([20.6597, -103.3496], 12);
+      setTimeout(() => ownerMap.invalidateSize(), 100);
+    } else {
+      mapEl.classList.add('empty');
+      mapEl.textContent = 'Sin ubicaciones activas por el momento.';
+    }
+    return;
+  }
+
+  if (!window.L) {
+    mapEl.classList.add('empty');
+    mapEl.textContent = 'Cargando mapa en vivo...';
+    cargarLeafletSiHaceFalta().then(ok => {
+      if (ok && document.getElementById('modalDueno')?.classList.contains('active')) {
+        renderMapaCobradores(snapshot);
+      } else if (!ok) {
+        mapEl.textContent = 'Mapa no disponible. Usa Abrir mapa en cada cobrador.';
+      }
+    });
+    return;
+  }
+
+  if (!inicializarMapaCobradores()) {
+    mapEl.classList.add('empty');
+    mapEl.textContent = 'Mapa no disponible. Usa Abrir mapa en cada cobrador.';
+    return;
+  }
+
+  ownerMapLayer.clearLayers();
+  ownerMapBounds = L.latLngBounds([]);
+
+  conCoords.forEach(c => {
+    const markerClass = c.live ? 'live' : 'stale';
+    const marker = L.marker([c.lat, c.lng], {
+      icon: L.divIcon({
+        className: '',
+        html: `<div class="delivery-driver-marker ${markerClass}">${escapeHTML(markerInicial(c.email))}</div>`,
+        iconSize: [34, 34],
+        iconAnchor: [17, 17],
+        popupAnchor: [0, -18]
+      })
+    }).addTo(ownerMapLayer);
+
+    const accuracy = Number(c.location.accuracy);
+    if (Number.isFinite(accuracy) && accuracy > 0) {
+      L.circle([c.lat, c.lng], {
+        radius: accuracy,
+        color: c.live ? '#0f766e' : '#b45309',
+        weight: 1,
+        fillColor: c.live ? '#0f766e' : '#b45309',
+        fillOpacity: 0.12
+      }).addTo(ownerMapLayer);
+    }
+
+    marker.bindPopup(`
+      <strong>${escapeHTML(c.email)}</strong><br>
+      ${escapeHTML(c.label)} · ${escapeHTML(tiempoDesdeISO(c.location.updatedAt))}<br>
+      ${Number.isFinite(accuracy) ? `Precision ${Math.round(accuracy)} m<br>` : ''}
+      <a href="${mapaUrl(c.lat, c.lng)}" target="_blank" rel="noopener">Abrir en Google Maps</a>
+    `);
+    ownerMapBounds.extend([c.lat, c.lng]);
+  });
+
+  window.centrarMapaCobradores();
+}
+
+window.centrarMapaCobradores = () => {
+  if (!ownerMap || !ownerMapBounds || !ownerMapBounds.isValid()) return;
+  ownerMap.fitBounds(ownerMapBounds, { padding: [38, 38], maxZoom: 16 });
+  setTimeout(() => ownerMap.invalidateSize(), 100);
+};
+
 // --- PANEL DE DUEÑO (Observador) ---
+function renderPanelDueno(snapshot, list) {
+  list.innerHTML = '';
+  renderMapaCobradores(snapshot);
+
+  if (!snapshot.exists()) {
+    list.innerHTML = '<p style="grid-column: span 2; text-align: center;">No hay cuentas registradas en la base de datos.</p>';
+    return;
+  }
+
+  let visibleUsers = 0;
+  snapshot.forEach(child => {
+    const uid = child.key;
+    const data = child.val() || {};
+    const profile = data.profile || {};
+    if (profile.accountDeleted) return;
+
+    visibleUsers += 1;
+    const email = profile.email ? profile.email : 'Empleado (Sin Email)';
+    const acceso = estadoAccesoUsuario(profile);
+    const puedeGestionar = uid !== currentUser.uid;
+    const ubicacionHTML = renderUbicacionEmpleado(data.location || {}, email);
+
+    let totalClientes = 0, totalCobrado = 0, totalPorCobrar = 0;
+
+    if (data.clientes) {
+      const clientesArr = Object.values(data.clientes);
+      totalClientes = clientesArr.length;
+      clientesArr.forEach(c => {
+        const abonos = Math.abs((c.movimientos || []).filter(m => m.monto < 0).reduce((a, m) => a + m.monto, 0));
+        const cargos = (c.movimientos || []).filter(m => m.monto > 0).reduce((a, m) => a + m.monto, 0);
+        totalCobrado += abonos;
+        totalPorCobrar += Math.max(0, cargos - abonos);
+      });
+    }
+
+    list.innerHTML += `
+      <div class="info-box employee-card ${acceso.status === 'active' ? '' : 'disabled'}" onclick="window.verEmpleado('${uid}', '${jsString(email)}')">
+        <span style="color: var(--color-primary); font-size: var(--text-sm); display:flex; align-items:center; gap:0.5rem; text-transform:none;">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>
+          ${escapeHTML(email)} ${uid === currentUser.uid ? '<span style="font-weight:normal; color:var(--color-text-muted);">(Tú)</span>' : ''}
+        </span>
+        <div style="margin-top:.5rem;"><span class="badge ${acceso.class}">${acceso.label}</span></div>
+        <div style="margin-top: 0.5rem; font-size: var(--text-xs); color: var(--color-text-muted);">
+          <div>Clientes Registrados: <strong style="color:var(--color-text);">${totalClientes}</strong></div>
+          <div>Cartera Activa: <strong class="text-warning">${fmt.format(totalPorCobrar)}</strong></div>
+          <div>Total Recaudado: <strong class="text-success">${fmt.format(totalCobrado)}</strong></div>
+          ${profile.accessUpdatedAt ? `<div>Último cambio de acceso: <strong style="color:var(--color-text);">${formatDisplayDate((profile.accessUpdatedAt || '').slice(0,10))}</strong></div>` : ''}
+        </div>
+        ${ubicacionHTML}
+        <button class="btn btn-secondary" style="width: 100%; margin-top: 1rem; padding: 0.5rem; font-size: var(--text-xs); border: 1px solid var(--color-primary);">Inspeccionar Cuenta</button>
+        <div class="employee-actions" onclick="event.stopPropagation()">
+          ${puedeGestionar ? `
+            ${acceso.status === 'active'
+              ? `<button class="btn btn-danger" onclick="window.cambiarAccesoUsuario('${uid}', 'suspended', '${jsString(email)}')">Suspender</button>`
+              : `<button class="btn btn-secondary" onclick="window.cambiarAccesoUsuario('${uid}', 'active', '${jsString(email)}')">Reactivar</button>`}
+            <button class="btn btn-ghost" style="color:var(--color-error); border-color:var(--color-error);" onclick="window.cambiarAccesoUsuario('${uid}', 'deleted', '${jsString(email)}')">Quitar acceso</button>
+            <button class="btn btn-danger" style="grid-column:1/-1;" onclick="window.borrarCuentaEmpleado('${uid}', '${jsString(email)}')">Borrar cuenta</button>
+          ` : `<button class="btn btn-ghost" disabled style="grid-column:1/-1;">Cuenta administradora</button>`}
+        </div>
+      </div>
+    `;
+  });
+
+  if (visibleUsers === 0) {
+    list.innerHTML = '<p style="grid-column: span 2; text-align: center;">No hay cuentas activas de empleados en la base de datos.</p>';
+  }
+}
+
+window.cerrarPanelDueno = () => {
+  document.getElementById('modalDueno').classList.remove('active');
+  if (ownerPanelUnsub) {
+    ownerPanelUnsub();
+    ownerPanelUnsub = null;
+  }
+};
+
 window.abrirPanelDueno = async () => {
   if (!currentUser || currentUser.email !== 'edgarmeza@admin.com') {
     return showToast('Acceso denegado. Solo el administrador principal puede ver este panel.', 'error');
@@ -1936,76 +2517,18 @@ window.abrirPanelDueno = async () => {
   document.getElementById('modalDueno').classList.add('active');
   const list = document.getElementById('listaEmpleados');
   list.innerHTML = '<div style="grid-column: span 2; text-align: center; padding: 2rem;">Cargando perfiles...</div>';
-  
-  try {
-    const usersRef = ref(db, `${dbRoot}/users`);
-    const snapshot = await get(usersRef);
-    list.innerHTML = '';
-    
-    if (snapshot.exists()) {
-      let visibleUsers = 0;
-      snapshot.forEach(child => {
-        const uid = child.key;
-        const data = child.val();
-        const profile = data.profile || {};
-        if (profile.accountDeleted) return;
-        visibleUsers += 1;
-        const email = profile.email ? profile.email : 'Empleado (Sin Email)';
-        const acceso = estadoAccesoUsuario(profile);
-        const puedeGestionar = uid !== currentUser.uid;
-        
-        let totalClientes = 0, totalCobrado = 0, totalPorCobrar = 0;
-        
-        if (data.clientes) {
-          const clientesArr = Object.values(data.clientes);
-          totalClientes = clientesArr.length;
-          clientesArr.forEach(c => {
-             const abonos = Math.abs((c.movimientos || []).filter(m => m.monto < 0).reduce((a,m)=>a+m.monto, 0));
-             const cargos = (c.movimientos || []).filter(m => m.monto > 0).reduce((a,m)=>a+m.monto, 0);
-             totalCobrado += abonos;
-             totalPorCobrar += Math.max(0, cargos - abonos);
-          });
-        }
-        
-        list.innerHTML += `
-          <div class="info-box employee-card ${acceso.status === 'active' ? '' : 'disabled'}" onclick="window.verEmpleado('${uid}', '${jsString(email)}')">
-            <span style="color: var(--color-primary); font-size: var(--text-sm); display:flex; align-items:center; gap:0.5rem; text-transform:none;">
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>
-              ${escapeHTML(email)} ${uid === currentUser.uid ? '<span style="font-weight:normal; color:var(--color-text-muted);">(Tú)</span>' : ''}
-            </span>
-            <div style="margin-top:.5rem;"><span class="badge ${acceso.class}">${acceso.label}</span></div>
-            <div style="margin-top: 0.5rem; font-size: var(--text-xs); color: var(--color-text-muted);">
-              <div>Clientes Registrados: <strong style="color:var(--color-text);">${totalClientes}</strong></div>
-              <div>Cartera Activa: <strong class="text-warning">${fmt.format(totalPorCobrar)}</strong></div>
-              <div>Total Recaudado: <strong class="text-success">${fmt.format(totalCobrado)}</strong></div>
-              ${profile.accessUpdatedAt ? `<div>Último cambio de acceso: <strong style="color:var(--color-text);">${formatDisplayDate((profile.accessUpdatedAt || '').slice(0,10))}</strong></div>` : ''}
-            </div>
-            <button class="btn btn-secondary" style="width: 100%; margin-top: 1rem; padding: 0.5rem; font-size: var(--text-xs); border: 1px solid var(--color-primary);">Inspeccionar Cuenta</button>
-            <div class="employee-actions" onclick="event.stopPropagation()">
-              ${puedeGestionar ? `
-                ${acceso.status === 'active'
-                  ? `<button class="btn btn-danger" onclick="window.cambiarAccesoUsuario('${uid}', 'suspended', '${jsString(email)}')">Suspender</button>`
-                  : `<button class="btn btn-secondary" onclick="window.cambiarAccesoUsuario('${uid}', 'active', '${jsString(email)}')">Reactivar</button>`}
-                <button class="btn btn-ghost" style="color:var(--color-error); border-color:var(--color-error);" onclick="window.cambiarAccesoUsuario('${uid}', 'deleted', '${jsString(email)}')">Quitar acceso</button>
-                <button class="btn btn-danger" style="grid-column:1/-1;" onclick="window.borrarCuentaEmpleado('${uid}', '${jsString(email)}')">Borrar cuenta</button>
-              ` : `<button class="btn btn-ghost" disabled style="grid-column:1/-1;">Cuenta administradora</button>`}
-            </div>
-          </div>
-        `;
-      });
-      if (visibleUsers === 0) {
-        list.innerHTML = '<p style="grid-column: span 2; text-align: center;">No hay cuentas activas de empleados en la base de datos.</p>';
-      }
-    } else {
-      list.innerHTML = '<p style="grid-column: span 2; text-align: center;">No hay cuentas registradas en la base de datos.</p>';
-    }
-  } catch (e) {
+
+  const usersRef = ref(db, `${dbRoot}/users`);
+  if (ownerPanelUnsub) ownerPanelUnsub();
+  ownerPanelUnsub = onValue(usersRef, (snapshot) => {
+    renderPanelDueno(snapshot, list);
+  }, () => {
     list.innerHTML = '<p style="grid-column: span 2; text-align: center; color: var(--color-error);">Error al cargar. Revisa la conexión o reglas de Firebase.</p>';
-  }
+  });
 };
 
 window.verEmpleado = (uid, email) => {
-  document.getElementById('modalDueno').classList.remove('active');
+  window.cerrarPanelDueno();
   isObserving = true;
   observingUid = uid;
   activoId = null; // Reiniciar vista
@@ -3693,6 +4216,7 @@ if (auth) {
     const userMenu = document.getElementById('userMenuPanel');
     const ownerPanelBtn = document.getElementById('ownerPanelBtn');
     const settingsBtn = document.getElementById('settingsBtn');
+    const locationShareBtn = document.getElementById('locationShareBtn');
     
     if (user) {
       const profileRef = ref(db, `${dbRoot}/users/${user.uid}/profile`);
@@ -3715,6 +4239,9 @@ if (auth) {
         userMenu.style.display = 'none';
         if (ownerPanelBtn) ownerPanelBtn.style.display = 'none';
         if (settingsBtn) settingsBtn.style.display = 'none';
+        if (locationShareBtn) locationShareBtn.style.display = 'none';
+        locationRequiredForSession = false;
+        await detenerUbicacionCobrador(false, true);
         showToast(acceso.status === 'suspended' ? 'Tu acceso está suspendido. Contacta al administrador.' : 'Tu acceso fue retirado. Contacta al administrador.', 'error');
         await signOut(auth);
         return;
@@ -3727,9 +4254,16 @@ if (auth) {
       if (isMainAdmin) {
         if (ownerPanelBtn) ownerPanelBtn.style.display = 'inline-flex';
         if (settingsBtn) settingsBtn.style.display = 'inline-flex';
+        if (locationShareBtn) locationShareBtn.style.display = 'none';
+        locationRequiredForSession = false;
+        await detenerUbicacionCobrador(false, true);
       } else {
         if (ownerPanelBtn) ownerPanelBtn.style.display = 'none';
         if (settingsBtn) settingsBtn.style.display = 'none';
+        if (locationShareBtn) locationShareBtn.style.display = 'inline-flex';
+        locationRequiredForSession = true;
+        actualizarBotonUbicacion();
+        evaluarBloqueoUbicacion();
       }
       
       // Guardar el email del usuario recién conectado para que el Dueño pueda identificarlo en su panel
@@ -3740,13 +4274,28 @@ if (auth) {
       });
       
       listenClientes(user.uid);
+      if (!isMainAdmin) {
+        setTimeout(() => iniciarUbicacionCobrador(false), 400);
+      }
     } else {
       overlay.style.display = 'flex';
       userMenu.style.display = 'none';
       if (ownerPanelBtn) ownerPanelBtn.style.display = 'none';
+      if (settingsBtn) settingsBtn.style.display = 'none';
+      if (locationShareBtn) locationShareBtn.style.display = 'none';
       document.getElementById('cloudStatus').innerHTML = 'Inicia sesión...';
       
+      locationRequiredForSession = false;
+      setBloqueoUbicacionVisible(false);
       if (unsubscribeSnap) { unsubscribeSnap(); unsubscribeSnap = null; }
+      if (ownerPanelUnsub) { ownerPanelUnsub(); ownerPanelUnsub = null; }
+      if (locationWatchId !== null && navigator.geolocation) {
+        navigator.geolocation.clearWatch(locationWatchId);
+        locationWatchId = null;
+        lastKnownLocationAt = 0;
+        localStorage.setItem('grupoMezaUbicacionActiva', 'false');
+        actualizarBotonUbicacion();
+      }
       clientes = []; activoId = null;
       renderGlobalStats(); renderLista(); renderWorkspace();
     }
